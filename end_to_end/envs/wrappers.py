@@ -19,6 +19,9 @@ class ShapingRewardWrapper(gym.Wrapper):
         return obs, rew, done, info
 
 class StackFrame(gym.Wrapper):
+    '''
+    #TODO: check the stack_frame is properly implemented and turns the observation space into a convolutional space
+    '''
     def __init__(self, env, stack_frame=1):
         super().__init__(env)
         self.stack_frame = stack_frame
@@ -41,4 +44,4 @@ class StackFrame(gym.Wrapper):
     def step(self, *args, **kwargs):
         obs, rew, done, info = self.env.step(*args, **kwargs)
         self.frames.append(obs)
-        return np.stack(self.frames), rew, done, info
+    return np.stack(self.frames), rew, done, infoK

@@ -22,7 +22,6 @@ def create_model_state(x, y, z, angle):
 
 
 class GazeboSimulation():
-
     def __init__(self, init_position = [0, 0, 0]):
         self._pause = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
         self._unpause = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
