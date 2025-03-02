@@ -156,7 +156,7 @@ class JackalGazebo(gym.Env):
         raise NotImplementedError()
     
     def _get_pos_psi(self):
-        pose = self.gazebo_sim.get_model_state().pose
+        pose = self.gazebo_sim.get_model_state().pose # world frame
         pos = pose.position
         
         q1 = pose.orientation.x

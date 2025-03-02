@@ -1,4 +1,6 @@
 from envs.motion_control_envs import MotionControlContinuousLaser
+import numpy as np
+from tf.transformations import euler_from_quaternion
 
 class MultiRewardEnv(MotionControlContinuousLaser):
     def __init__(self, reward_function,  *args, **kwargs):
@@ -36,17 +38,33 @@ class MultiRewardEnv(MotionControlContinuousLaser):
     def step(self, action):
         # TODO: add to infos the reward function used, and the enviroment parameters
         # TODO: implement the reward 
-            # TODO: Implement smoothness rewards
-            # TODO: Implement speed rewards
-            # TODO: Implement collision penalties
-            # TODO: Implement obstacle distance penalty
-            # TODO: Implement global goal distance reward
-            # TODO: Implement going straight reward > turning rewards
-            # TODO: Implement time penalty
-            # TODO: Implement local goal direction reward
-        return super().step(action)
-    
+            # TODO: Implement smoothness rewards - Bruno
+            # TODO: Implement speed rewards - Bruno
+            # TODO: Implement collision penalties - Gabriel
+            # TODO: Implement obstacle distance penalty - Gabriel
+            # TODO: Implement global goal distance reward - Gabriel
+            # TODO: Implement going straight reward > turning rewards - Bruno
+            # TODO: Implement time penalty - Bruno
+            # TODO: Implement local goal direction reward - Gabriel
+        pass
     # TODO: implement total reward functions
+    
+    def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
+        #? pos, psi = self._get_pos_psi() (check how to get the next position and psi)
+        n_x_i = np.array([np.cos(current_psi), np.sin(current_psi)])
+        n_x_i_plus_1 = np.array([np.cos(next_psi), np.sin(next_psi)])
+        
+        # pos_vector
+        pos_i = np.array([current_pos.x, current_pos.y])
+        pos_i_plus_1 = np.array([next_pos.x, next_pos.y])
+        
+        # vector product between the two vectors
+        F = np.cross(n_x_i + n_x_i_plus_1, pos_i_plus_1 - pos_i)
+        
+        reward = 0.001 - np.norm(F)
+
+        return reward
+
 
     def switch_reward_function(self, reward_function):
         if reward_function in self.reward_functions:
