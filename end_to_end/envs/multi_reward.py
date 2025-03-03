@@ -62,9 +62,11 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         F = np.cross(n_x_i + n_x_i_plus_1, pos_i_plus_1 - pos_i)
         
         reward = 0.001 - np.norm(F)
-
         return reward
 
+    def _speed_reward(self,):
+        self.gazebo_sim.get_bad_vel_num()
+        
 
     def switch_reward_function(self, reward_function):
         if reward_function in self.reward_functions:

@@ -44,4 +44,4 @@ class StackFrame(gym.Wrapper):
     def step(self, *args, **kwargs):
         obs, rew, done, info = self.env.step(*args, **kwargs)
         self.frames.append(obs)
-    return np.stack(self.frames), rew, done, infoK
+        return np.stack(self.frames), rew, done, info
