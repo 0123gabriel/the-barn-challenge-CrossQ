@@ -41,11 +41,11 @@ class MultiRewardEnv(MotionControlContinuousLaser):
             # TODO: Implement smoothness rewards - Bruno
             # TODO: Implement speed rewards - Bruno
             # TODO: Implement collision penalties - Gabriel
-            # TODO: Implement obstacle distance penalty - Gabriel
-            # TODO: Implement global goal distance reward - Gabriel
+            # TODO: Implement obstacle distance penalty - Gabriel - done
+            # TODO: Implement global goal distance reward - Gabriel - done
             # TODO: Implement going straight reward > turning rewards - Bruno
             # TODO: Implement time penalty - Bruno
-            # TODO: Implement local goal direction reward - Gabriel
+            # TODO: Implement local goal direction reward - Gabriel - done
         pass
     # TODO: implement total reward functions
     
@@ -68,19 +68,61 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         self.gazebo_sim.get_bad_vel_num()
         
     def _obs_dist_reward(self):
+        
         laser_data = self.gazebo_sim.get_laser_scan()
-        min_distance = min(laser_data)
-        min_dist = 0.34 + 0.2 # Radius of Jackal condering a radius from the lidar to the front right corner
+        valid_ranges = [r for r in laser_data.ranges if r > 0 and r != float('inf')]
+        min_distance = min(valid_ranges) #if valid_ranges else float('inf')
+        min_dist = 0.34 + 0.2 # Radius of Jackal condering a radius from the lidar to the front right corner plus min dist of 0.2
         
         if min_distance < min_dist: 
-            reward = -0.01
+            reward = -0.001
         else:
-            reward = 0.01
+            reward = 0.001
         return reward
     
-    def loca_goal_dir_reward(self):
+    def _local_goal_dir_reward(self):
+        local_g_x = self.gazebo_sim.local_goal[0]
+        local_g_y = self.gazebo_sim.local_goal[1]
         
-        pass
+        robot_pos, psi = self._get_pos_psi()
+        robot_x = robot_pos.x
+        robot_y = robot_pos.y
+        
+        # Calculate vector from robot to local goal
+        local_goal_vector = np.array([local_g_x - robot_x, local_g_y - robot_y])
+        
+        # Get unit vector
+        unit_goal_vector = local_goal_vector / np.linalg.norm(local_goal_vector)
+        
+        # Create unit vector at robot's heading angle
+        robot_heading = np.array([np.cos(psi), np.sin(psi)])
+
+        # Calculate dot product between vectors
+        alignment = np.dot(unit_goal_vector, robot_heading)
+
+        # Convert to reward (-1 to 1 range)
+        reward = alignment * 0.001
+        return reward
+    
+    def _global_goal_dist_reward(self):
+        goal_pos = self.move_base.goal_position
+        robot_pos, _ = self._get_pos_psi()
+        robot_x = robot_pos.x
+        robot_y = robot_pos.y
+        # Calculate Euclidean distance between robot and goal
+        distance = np.sqrt((goal_pos[0] - robot_x)**2 + (goal_pos[1] - robot_y)**2)
+        
+        # Convert distance to reward (closer = higher reward)
+        reward = 0.001 * (1 / (distance + 1))  # Adding 1 to avoid division by zero
+        return reward
+    
+    def _collision_reward(self):
+        collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
+        reward = 0
+        if collided:
+            reward += self.collision_reward
+            
+        return reward
 
     def switch_reward_function(self, reward_function):
         if reward_function in self.reward_functions:

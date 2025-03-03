@@ -7,6 +7,7 @@ from gazebo_msgs.srv import SetModelState, GetModelState
 from geometry_msgs.msg import Quaternion, Twist
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool
+from nav_msgs.msg import Path
 
 def create_model_state(x, y, z, angle):
     # the rotation of the angle is in (0, 0, 1) direction
@@ -36,7 +37,12 @@ class GazeboSimulation():
         self.bad_vel_count = 0
         self.vel_count = 0
         self._vel_sub = rospy.Subscriber("/jackal_velocity_controller/cmd_vel", Twist, self.vel_monitor)
-        
+        self._local_goal_sub = rospy.Subscriber('/move_base/TrajectoryPlannerROS/local_plan', Path, self.current_goal_pos)
+    
+    def current_goal_pos(self, msg):
+        path = msg.poses
+        self.local_goal = path[-1]
+    
     def vel_monitor(self, msg):
         """
         Count the number of velocity command and velocity command
