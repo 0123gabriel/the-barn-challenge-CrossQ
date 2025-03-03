@@ -4,7 +4,7 @@ import numpy as np
 from std_srvs.srv import Empty
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, GetModelState
-from geometry_msgs.msg import Quaternion, Twist
+from geometry_msgs.msg import Quaternion, Twist, Odometry
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool
 
@@ -36,6 +36,11 @@ class GazeboSimulation():
         self.bad_vel_count = 0
         self.vel_count = 0
         self._vel_sub = rospy.Subscriber("/jackal_velocity_controller/cmd_vel", Twist, self.vel_monitor)
+        self.real_vel_sub = rospy.Subscriber("/jackal_velocity_controller/odom", Odometry, self.real_vel_monitor)
+        self.real_vel = 0
+    
+    def real_vel_monitor(self, msg):
+        self.real_vel = msg.twist.twist.linear.x
         
     def vel_monitor(self, msg):
         """
