@@ -67,6 +67,20 @@ class MultiRewardEnv(MotionControlContinuousLaser):
     def _speed_reward(self,):
         self.gazebo_sim.get_bad_vel_num()
         
+    def _obs_dist_reward(self):
+        laser_data = self.gazebo_sim.get_laser_scan()
+        min_distance = min(laser_data)
+        min_dist = 0.34 + 0.2 # Radius of Jackal condering a radius from the lidar to the front right corner
+        
+        if min_distance < min_dist: 
+            reward = -0.01
+        else:
+            reward = 0.01
+        return reward
+    
+    def loca_goal_dir_reward(self):
+        
+        pass
 
     def switch_reward_function(self, reward_function):
         if reward_function in self.reward_functions:
