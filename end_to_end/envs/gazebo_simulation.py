@@ -51,6 +51,9 @@ class GazeboSimulation():
     def get_velocity(self):
         return self.real_vel
         
+    def get_velocity(self):
+        return self.real_vel
+        
     def vel_monitor(self, msg):
         """
         Count the number of velocity command and velocity command
