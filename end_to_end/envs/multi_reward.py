@@ -17,6 +17,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
             # Add more reward functions as needed
         }
 
+        self.reward_scheme_name = reward_function
         # Set the reward function based on the argument
         if reward_function in self.reward_functions:
             self.reward_func = self.reward_functions[reward_function]
@@ -39,21 +40,87 @@ class MultiRewardEnv(MotionControlContinuousLaser):
 
     def step(self, action):
         # TODO: add to infos the reward function used, and the enviroment parameters
-        # TODO: implement the reward 
-            # TODO: Implement smoothness rewards - Bruno
-            # TODO: Implement speed rewards - Bruno
-            # TODO: Implement collision penalties - Gabriel
-            # TODO: Implement obstacle distance penalty - Gabriel - done
-            # TODO: Implement global goal distance reward - Gabriel - done
-            # TODO: Implement going straight reward > turning rewards - Bruno
-            # TODO: Implement time penalty - Bruno
-            # TODO: Implement local goal direction reward - Gabriel - done
-        pass
+        # TODO: implement the reward
+        # TODO: Implement smoothness rewards - Bruno
+        # TODO: Implement speed rewards - Bruno
+        # TODO: Implement collision penalties - Gabriel
+        # TODO: Implement obstacle distance penalty - Gabriel
+        # TODO: Implement global goal distance reward - Gabriel
+        # TODO: Implement going straight reward > turning rewards - Bruno
+        # TODO: Implement time penalty - Bruno
+        # TODO: Implement local goal direction reward - Gabriel
+        
+        # Get previous velocity, position and orientation
+        prev_pos, prev_psi = self._get_pos_psi()
+        prev_vel = self.gazebo_sim.get_velocity()
+        
+        # step the simulation
+        self._take_action(action)
+        self.step_count += 1
+        pos, psi = self._get_pos_psi()
+        
+        # self.gazebo_sim.unpause()
+        # compute observation
+        obs = self._get_observation(pos, psi, action)
+        
+        # compute termination
+        flip = pos.z > 0.1  # robot flip
+
+        # compute termination
+        flip = pos.z > 0.1  # robot flip
+        
+        goal_pos = np.array([self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y])
+        success = np.linalg.norm(goal_pos) < 0.4
+        
+        truncation = self.step_count >= self.max_step
+        
+        collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
+        self.collision_count += int(collided)
+        
+        termination = flip or success or self.collision_count >= self.max_collision
+        
+        rew = self.reward_func(prev_vel, pos, prev_pos, prev_psi, psi) #! Improve once reward schemes are implemented
+
+        
+        self.last_goal_pos = goal_pos
+        
+        info = dict(
+            collision=self.collision_count,
+            collided=collided,
+            goal_position=goal_pos,
+            time=self.current_time - self.start_time,
+            success=success,
+            world=self.world_name,
+            reward_function=self.reward_scheme_name
+        )
+        
+        if truncation or termination:
+            bn, nn = self.gazebo_sim.get_bad_vel_num()
+            
+        return obs, rew, termination, truncation, info
 
     # TODO: implement total reward functions
 
+    def smooth_reward_scheme(self):
+        pass
+    
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
-        # ? pos, psi = self._get_pos_psi() (check how to get the next position and psi)
+        """
+        Calculate a smoothness reward based on the vehicle's trajectory.
+        This function evaluates how smoothly the vehicle is moving by comparing the current and next position and orientation.
+        It uses a cross product between the combined orientation vectors and the position difference to assess smoothness.
+        based on:  DOI 10.1109/TIV.2024.3444854
+        Parameters:
+            current_pos (Point): Current position of the vehicle (containing x, y coordinates)
+            current_psi (float): Current heading angle of the vehicle in radians
+            next_pos (Point): Next position of the vehicle (containing x, y coordinates)
+            next_psi (float): Next heading angle of the vehicle in radians
+        Returns:
+            float: A reward value where higher values indicate smoother trajectories.
+                   The reward is calculated as (0.001 - |F|), where F is the cross product
+                   between the sum of normalized orientation vectors and the position difference vector.
+        """ 
+        # ? pos, psi = self._get_pos_psi() (check how to get the next position and psi) (maybe get the previous position and psi)
         n_x_i = np.array([np.cos(current_psi), np.sin(current_psi)])
         n_x_i_plus_1 = np.array([np.cos(next_psi), np.sin(next_psi)])
 

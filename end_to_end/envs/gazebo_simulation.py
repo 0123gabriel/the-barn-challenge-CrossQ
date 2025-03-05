@@ -38,17 +38,19 @@ class GazeboSimulation():
         self.vel_count = 0
         self._vel_sub = rospy.Subscriber("/jackal_velocity_controller/cmd_vel", Twist, self.vel_monitor)
         self.real_vel_sub = rospy.Subscriber("/jackal_velocity_controller/odom", Odometry, self.real_vel_monitor)
+        self._local_goal_sub = rospy.Subscriber('/move_base/TrajectoryPlannerROS/local_plan', Path, self.current_goal_pos)
         self.real_vel = 0
     
     def real_vel_monitor(self, msg):
         self.real_vel = msg.twist.twist.linear.x
-        
-        self._local_goal_sub = rospy.Subscriber('/move_base/TrajectoryPlannerROS/local_plan', Path, self.current_goal_pos)
     
     def current_goal_pos(self, msg):
         path = msg.poses
         self.local_goal = path[-1]
     
+    def get_velocity(self):
+        return self.real_vel
+        
     def vel_monitor(self, msg):
         """
         Count the number of velocity command and velocity command
