@@ -11,6 +11,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
 
         # Dictionary of available reward functions #TODO: implement reward functions
         self.reward_functions = {
+            "smooth": self.smooth_reward_scheme,
             "sparse": self._sparse_reward,
             "dense": self._dense_reward,
             "distance": self._distance_based_reward,
@@ -58,6 +59,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi()
+        vel = self.gazebo_sim.get_velocity()
         
         # self.gazebo_sim.unpause()
         # compute observation
@@ -72,15 +74,14 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         goal_pos = np.array([self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y])
         success = np.linalg.norm(goal_pos) < 0.4
         
-        truncation = self.step_count >= self.max_step
+        truncation = self.step_count >= self.max_step # Timeout
         
         collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
         self.collision_count += int(collided)
         
         termination = flip or success or self.collision_count >= self.max_collision
         
-        rew = self.reward_func(prev_vel, pos, prev_pos, prev_psi, psi) #! Improve once reward schemes are implemented
-
+        rew = self.reward_func(prev_vel, vel, pos, prev_pos, prev_psi, psi, termination, collided, truncation, goal_pos) #! Improve once reward schemes are implemented
         
         self.last_goal_pos = goal_pos
         
@@ -100,8 +101,21 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         return obs, rew, termination, truncation, info
 
     # TODO: implement total reward functions
-
-    def smooth_reward_scheme(self):
+    def _time_penalty(self, max_step):
+        return -1/max_step
+    
+    def smooth_reward_scheme(self, prev_vel, vel, pos, prev_pos, prev_psi, psi):
+        # time penalty
+        r = self._time_penalty(self.step_count, self.max_step)
+        # smoothness reward
+        r += self._smoothness_reward(prev_pos, prev_psi, pos, psi)
+        
+        # speed reward
+        r += self._speed_reward_soft(prev_vel, vel, self.max_vel)
+        
+        #  
+        
+        
         pass
     
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
