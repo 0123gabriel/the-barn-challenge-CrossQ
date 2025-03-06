@@ -114,8 +114,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         r += self._speed_reward_soft(prev_vel, vel, self.max_vel)
         
         # reward for getting closer
-        getting_closer = (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)) < 0
-        r += 0.001 * getting_closer
+        r += self._goal_approach_reward(goal_pos)
         
         # termination rewards
         if collided:
@@ -129,8 +128,11 @@ class MultiRewardEnv(MotionControlContinuousLaser):
     
     def lidar_based_scheme(self, goal_pos, prev_pos, pos, ):
         # Stop reward
-        r = self._stop_reward(goal_pos, prev_pos, pos)
-        # R forward
+        r = self._stop_reward(prev_pos, pos)
+        # R forward and R turn
+        r += self._going_straight_reward(goal_pos)
+        # R vel
+        r += self._
         
         
         pass
@@ -248,6 +250,11 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         else:
             reward = 0
             
+        return reward
+    
+    def _goal_approach_reward(self, goal_pos):
+        getting_closer = (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)) < 0
+        reward = 0.001 * getting_closer
         return reward
 
     def switch_reward_function(self, reward_function):
