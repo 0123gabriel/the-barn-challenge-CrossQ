@@ -81,7 +81,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         
         termination = flip or success or self.collision_count >= self.max_collision
         
-        rew = self.reward_func(prev_vel, vel, pos, prev_pos, prev_psi, psi, termination, collided, truncation, goal_pos) #! Improve once reward schemes are implemented
+        rew = self.reward_func(prev_vel, vel, pos, prev_pos, prev_psi, psi, success, collided, truncation, goal_pos) #! Improve once reward schemes are implemented
         
         self.last_goal_pos = goal_pos
         
@@ -104,7 +104,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
     def _time_penalty(self, max_step):
         return -1/max_step
     
-    def smooth_reward_scheme(self, prev_vel, vel, pos, prev_pos, prev_psi, psi):
+    def smooth_reward_scheme(self, prev_vel, vel, pos, prev_pos, prev_psi, psi, success, collided, truncation, goal_pos):
         # time penalty
         r = self._time_penalty(self.step_count, self.max_step)
         # smoothness reward
@@ -113,10 +113,19 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         # speed reward
         r += self._speed_reward_soft(prev_vel, vel, self.max_vel)
         
-        #  
+        # reward for getting closer
+        getting_closer = (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)) < 0
+        r += 0.001 * getting_closer
         
+        # termination rewards
+        if collided:
+            r += self.collision_reward
+        elif success:
+            r += self.success_reward
+        elif truncation:
+            r += self.failure_reward
         
-        pass
+        return r
     
     def lidar_based_scheme(self, goal_pos, prev_pos, pos, ):
         # Stop reward
@@ -166,8 +175,8 @@ class MultiRewardEnv(MotionControlContinuousLaser):
     def _speed_reward_simple(self, current_vel, max_vel, limit = 0.09):
         return np.clip(current_vel / max_vel, -0.01, limit)
     
-    def _going_straight_reward(self, current_psi, goal_psi, alpha=10):
-        if np.abs(current_psi - goal_psi) < 0.01:
+    def _going_straight_reward(self, current_psi, prev_psi, alpha=10):
+        if np.abs(current_psi - prev_psi) < 0.01:
             return 0.2
         else:
             return 0.05
