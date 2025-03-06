@@ -118,6 +118,14 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         
         pass
     
+    def lidar_based_scheme(self, goal_pos, prev_pos, pos, ):
+        # Stop reward
+        r = self._stop_reward(goal_pos, prev_pos, pos)
+        # R forward
+        
+        
+        pass
+    
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
         """
         Calculate a smoothness reward based on the vehicle's trajectory.
@@ -221,6 +229,15 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         reward = 0
         if collided:
             reward += self.collision_reward
+            
+        return reward
+    
+    def _stop_reward(self, prev_pos, pos):
+        distance = np.linalg.norm([prev_pos.x - pos.x, prev_pos.y - pos.y])
+        if distance < 0.01:
+            reward = -1
+        else:
+            reward = 0
             
         return reward
 
