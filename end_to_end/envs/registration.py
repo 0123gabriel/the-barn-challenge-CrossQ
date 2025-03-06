@@ -11,3 +11,10 @@ register(
     id="motion_control_continuous_laser-v0",
     entry_point="envs.motion_control_envs:MotionControlContinuousLaser"
 )
+
+
+# Multi rewards envs
+register(
+    id="muti_rewards_env-v0", 
+    entry_point="envs.multi_reward:MultiRewardEnv"
+)
