@@ -4,17 +4,17 @@ from tf.transformations import euler_from_quaternion
 
 
 class MultiRewardEnv(MotionControlContinuousLaser):
-    def __init__(self, reward_function, *args, **kwargs):
-        # TODO: Revise this
-        self.slack_reward = -1
-        self.failure_reward = -50
-
+    def __init__(self,
+                    reward_function,
+                    **kwargs):
+        super().__init__(**kwargs)
+            
         # Dictionary of available reward functions #TODO: implement reward functions
         self.reward_functions = {
             "smooth": self.smooth_reward_scheme,
-            "lidar" : self.lidar_based_scheme,
+            "lidar": self.lidar_based_scheme,
             "simple": self.simple_reward_scheme,
-            "mixed" : self.mixed_scheme,
+            "mixed": self.mixed_scheme,
             # Add more reward functions as needed
         }
 
@@ -50,41 +50,54 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         # TODO: Implement going straight reward > turning rewards - Bruno
         # TODO: Implement time penalty - Bruno
         # TODO: Implement local goal direction reward - Gabriel
-        
+
         # Get previous velocity, position and orientation
         prev_pos, prev_psi = self._get_pos_psi()
         prev_vel = self.gazebo_sim.get_velocity()
-        
+
         # step the simulation
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi()
         vel = self.gazebo_sim.get_velocity()
-        
+
         # self.gazebo_sim.unpause()
         # compute observation
         obs = self._get_observation(pos, psi, action)
-        
+
         # compute termination
         flip = pos.z > 0.1  # robot flip
 
         # compute termination
         flip = pos.z > 0.1  # robot flip
-        
-        goal_pos = np.array([self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y])
+
+        goal_pos = np.array(
+            [self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y]
+        )
         success = np.linalg.norm(goal_pos) < 0.4
-        
-        truncation = self.step_count >= self.max_step # Timeout
-        
+
+        truncation = self.step_count >= self.max_step  # Timeout
+
         collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
         self.collision_count += int(collided)
-        
+
         termination = flip or success or self.collision_count >= self.max_collision
-        
-        rew = self.reward_func(prev_vel, vel, pos, prev_pos, prev_psi, psi, success, collided, truncation, goal_pos) #! Improve once reward schemes are implemented
-        
+
+        rew = self.reward_func(
+            prev_vel,
+            vel,
+            pos,
+            prev_pos,
+            prev_psi,
+            psi,
+            success,
+            collided,
+            truncation,
+            goal_pos,
+        )  #! Improve once reward schemes are implemented
+
         self.last_goal_pos = goal_pos
-        
+
         info = dict(
             collision=self.collision_count,
             collided=collided,
@@ -92,7 +105,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
             time=self.current_time - self.start_time,
             success=success,
             world=self.world_name,
-            reward_function=self.reward_scheme_name
+            reward_function=self.reward_scheme_name,
         )
 
         if truncation or termination:
@@ -104,22 +117,32 @@ class MultiRewardEnv(MotionControlContinuousLaser):
     def _time_penalty(self, max_step):
         return -1 / max_step
 
-    def simple_reward_scheme(self, prev_vel, vel, pos, prev_pos, prev_psi, psi, success, collided, truncation, goal_pos):
+    def simple_reward_scheme(
+        self,
+        prev_vel,
+        vel,
+        pos,
+        prev_pos,
+        prev_psi,
+        psi,
+        success,
+        collided,
+        truncation,
+        goal_pos,
+    ):
         c_1 = 0.001
         c_2 = 0.02
-        r = c_1 * (
-            np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)
-        ) + c_2
-        
+        r = c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)) + c_2
+
         if collided:
             r += self.collision_reward
         if success:
             r += self.success_reward
         if truncation:
             r += self.failure_reward
-        
+
         return r
-    
+
     def smooth_reward_scheme(
         self,
         prev_vel,
@@ -143,7 +166,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
 
         # reward for getting closer
         r += self._goal_approach_reward(goal_pos)
-        
+
         # termination rewards
         if collided:
             r += self.collision_reward
@@ -153,8 +176,10 @@ class MultiRewardEnv(MotionControlContinuousLaser):
             r += self.failure_reward
 
         return r
-    
-    def lidar_based_scheme(self, goal_pos, prev_pos, pos, curr_vel, collided, success, truncation):
+
+    def lidar_based_scheme(
+        self, goal_pos, prev_pos, pos, curr_vel, collided, success, truncation
+    ):
         # Stop reward
         r = self._stop_reward(prev_pos, pos)
         # R forward and R turn
@@ -163,7 +188,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         r += self._speed_reward_simple(curr_vel, self.max_vel)
         # Reward for distance to obstacle
         r += self._obs_dist_reward()
-        
+
         # termination rewards
         if collided:
             r += self.collision_reward
@@ -171,16 +196,26 @@ class MultiRewardEnv(MotionControlContinuousLaser):
             r += self.success_reward
         elif truncation:
             r += self.failure_reward
-        
+
         return r
-    
-    def mixed_scheme(self, goal_pos, prev_pos, prev_psi, pos, psi, prev_vel, vel, collided, success, truncation):
+
+    def mixed_scheme(
+        self,
+        goal_pos,
+        prev_pos,
+        prev_psi,
+        pos,
+        psi,
+        prev_vel,
+        vel,
+        collided,
+        success,
+        truncation,
+    ):
         c_1 = 0.001
         c_2 = 0.02
-        r = c_1 * (
-            np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)
-        ) + c_2
-        
+        r = c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)) + c_2
+
         # time penalty
         r = self._time_penalty(self.step_count, self.max_step)
         # smoothness reward
@@ -191,14 +226,14 @@ class MultiRewardEnv(MotionControlContinuousLaser):
 
         # reward for getting closer
         r += self._goal_approach_reward(goal_pos)
-        
+
         # Stop reward
         r = self._stop_reward(prev_pos, pos)
         # R forward and R turn
         r += self._going_straight_reward(goal_pos)
         # Reward for distance to obstacle
         r += self._obs_dist_reward()
-        
+
         # termination rewards
         if collided:
             r += self.collision_reward
@@ -206,9 +241,9 @@ class MultiRewardEnv(MotionControlContinuousLaser):
             r += self.success_reward
         elif truncation:
             r += self.failure_reward
-        
+
         return r
-        
+
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
         """
         Calculate a smoothness reward based on the vehicle's trajectory.
@@ -260,18 +295,18 @@ class MultiRewardEnv(MotionControlContinuousLaser):
 
     def _obs_dist_reward(self, alpha=0.1):
         laser_data = self.gazebo_sim.get_laser_scan()
-        valid_ranges = [r for r in laser_data.ranges if r > 0 and r != float('inf')]
-        min_distance = min(valid_ranges) #if valid_ranges else float('inf')
-        return min(0.01, alpha*min_distance)
-        
+        valid_ranges = [r for r in laser_data.ranges if r > 0 and r != float("inf")]
+        min_distance = min(valid_ranges)  # if valid_ranges else float('inf')
+        return min(0.01, alpha * min_distance)
+
         # min_dist = 0.34 + 0.2 # Radius of Jackal condering a radius from the lidar to the front right corner plus min dist of 0.2
-        
-        # if min_distance < min_dist: 
+
+        # if min_distance < min_dist:
         #     reward = -0.001
         # else:
         #     reward = 0.001
         # return reward
-    
+
     def _local_goal_dir_reward(self):
         local_g_x = self.gazebo_sim.local_goal[0]
         local_g_y = self.gazebo_sim.local_goal[1]
@@ -315,18 +350,20 @@ class MultiRewardEnv(MotionControlContinuousLaser):
             reward += self.collision_reward
 
         return reward
-    
+
     def _stop_reward(self, prev_pos, pos):
         distance = np.linalg.norm([prev_pos.x - pos.x, prev_pos.y - pos.y])
         if distance < 0.01:
             reward = -1
         else:
             reward = 0
-            
+
         return reward
-    
+
     def _goal_approach_reward(self, goal_pos):
-        getting_closer = (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)) < 0
+        getting_closer = (
+            np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)
+        ) < 0
         reward = 0.001 * getting_closer
         return reward
 
