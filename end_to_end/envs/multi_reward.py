@@ -13,10 +13,8 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         self.reward_functions = {
             "smooth": self.smooth_reward_scheme,
             "lidar" : self.lidar_based_scheme,
-            "sparse": self._sparse_reward,
             "simple": self.simple_reward_scheme,
-            "dense": self._dense_reward,
-            "distance": self._distance_based_reward,
+            "mixed" : self.mixed_scheme,
             # Add more reward functions as needed
         }
 
@@ -176,6 +174,41 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         
         return r
     
+    def mixed_scheme(self, goal_pos, prev_pos, prev_psi, pos, psi, prev_vel, vel, collided, success, truncation):
+        c_1 = 0.001
+        c_2 = 0.02
+        r = c_1 * (
+            np.linalg.norm(self.last_goal_pos) - np.linalg.norm(goal_pos)
+        ) + c_2
+        
+        # time penalty
+        r = self._time_penalty(self.step_count, self.max_step)
+        # smoothness reward
+        r += self._smoothness_reward(prev_pos, prev_psi, pos, psi)
+
+        # speed reward
+        r += self._speed_reward_soft(prev_vel, vel, self.max_vel)
+
+        # reward for getting closer
+        r += self._goal_approach_reward(goal_pos)
+        
+        # Stop reward
+        r = self._stop_reward(prev_pos, pos)
+        # R forward and R turn
+        r += self._going_straight_reward(goal_pos)
+        # Reward for distance to obstacle
+        r += self._obs_dist_reward()
+        
+        # termination rewards
+        if collided:
+            r += self.collision_reward
+        elif success:
+            r += self.success_reward
+        elif truncation:
+            r += self.failure_reward
+        
+        return r
+        
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
         """
         Calculate a smoothness reward based on the vehicle's trajectory.
