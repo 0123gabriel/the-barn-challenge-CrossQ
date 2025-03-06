@@ -12,6 +12,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         # Dictionary of available reward functions #TODO: implement reward functions
         self.reward_functions = {
             "smooth": self.smooth_reward_scheme,
+            "lidar" : self.lidar_based_scheme,
             "sparse": self._sparse_reward,
             "dense": self._dense_reward,
             "distance": self._distance_based_reward,
@@ -126,16 +127,25 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         
         return r
     
-    def lidar_based_scheme(self, goal_pos, prev_pos, pos, ):
+    def lidar_based_scheme(self, goal_pos, prev_pos, pos, curr_vel, collided, success, truncation):
         # Stop reward
         r = self._stop_reward(prev_pos, pos)
         # R forward and R turn
         r += self._going_straight_reward(goal_pos)
         # R vel
-        r += self._
+        r += self._speed_reward_simple(curr_vel, self.max_vel)
+        # Reward for distance to obstacle
+        r += self._obs_dist_reward()
         
+        # termination rewards
+        if collided:
+            r += self.collision_reward
+        elif success:
+            r += self.success_reward
+        elif truncation:
+            r += self.failure_reward
         
-        pass
+        return r
     
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
         """
@@ -186,18 +196,19 @@ class MultiRewardEnv(MotionControlContinuousLaser):
     def _time_penalty(self, step_count, max_step):
         return -0.01
 
-    def _obs_dist_reward(self):
-        
+    def _obs_dist_reward(self, alpha=0.1):
         laser_data = self.gazebo_sim.get_laser_scan()
         valid_ranges = [r for r in laser_data.ranges if r > 0 and r != float('inf')]
         min_distance = min(valid_ranges) #if valid_ranges else float('inf')
-        min_dist = 0.34 + 0.2 # Radius of Jackal condering a radius from the lidar to the front right corner plus min dist of 0.2
+        return min(0.01, alpha*min_distance)
         
-        if min_distance < min_dist: 
-            reward = -0.001
-        else:
-            reward = 0.001
-        return reward
+        # min_dist = 0.34 + 0.2 # Radius of Jackal condering a radius from the lidar to the front right corner plus min dist of 0.2
+        
+        # if min_distance < min_dist: 
+        #     reward = -0.001
+        # else:
+        #     reward = 0.001
+        # return reward
     
     def _local_goal_dir_reward(self):
         local_g_x = self.gazebo_sim.local_goal[0]
