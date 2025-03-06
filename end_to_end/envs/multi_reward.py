@@ -51,6 +51,8 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         # TODO: Implement time penalty - Bruno
         # TODO: Implement local goal direction reward - Gabriel
 
+        
+
         # Get previous velocity, position and orientation
         prev_pos, prev_psi = self._get_pos_psi()
         prev_vel = self.gazebo_sim.get_velocity()

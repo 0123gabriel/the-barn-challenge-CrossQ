@@ -96,6 +96,7 @@ class JackalGazebo(gym.Env):
     def step(self, action):
         """take an action and step the environment
         """
+        print('==========================training mode==============================================================')
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi()
