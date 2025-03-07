@@ -2,15 +2,12 @@ from envs.motion_control_envs import MotionControlContinuous
 from envs.jackal_gazebo_envs import JackalGazeboLaser
 
 import numpy as np
-#from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point
 
 class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
-    def __init__(self,
-                    **kwargs):
+    def __init__(self, reward_function = 'simple', **kwargs):
         super().__init__(**kwargs)
-            
-        reward_function='simple'
-        # Dictionary of available reward functions #TODO: implement reward functions
+
         self.reward_functions = {
             "smooth": self.smooth_reward_scheme,
             "lidar": self.lidar_based_scheme,
@@ -19,8 +16,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             # Add more reward functions as needed
         }
 
-        self.reward_scheme_name = reward_function
         # Set the reward function based on the argument
+        self.reward_scheme_name = reward_function
         if self.reward_scheme_name in self.reward_functions:
             self.reward_func = self.reward_functions[self.reward_scheme_name]
         else:
