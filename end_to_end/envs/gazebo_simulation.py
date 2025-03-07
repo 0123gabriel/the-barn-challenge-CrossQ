@@ -4,7 +4,8 @@ import numpy as np
 from std_srvs.srv import Empty
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, GetModelState
-from geometry_msgs.msg import Quaternion, Twist, Odometry
+from geometry_msgs.msg import Quaternion, Twist
+from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Bool
 from nav_msgs.msg import Path
@@ -48,9 +49,6 @@ class GazeboSimulation():
         path = msg.poses
         self.local_goal = path[-1]
     
-    def get_velocity(self):
-        return self.real_vel
-        
     def get_velocity(self):
         return self.real_vel
         

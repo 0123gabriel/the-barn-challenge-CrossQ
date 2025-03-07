@@ -1,14 +1,15 @@
-from envs.motion_control_envs import MotionControlContinuousLaser
+from envs.motion_control_envs import MotionControlContinuous
+from envs.jackal_gazebo_envs import JackalGazeboLaser
+
 import numpy as np
-from tf.transformations import euler_from_quaternion
+#from geometry_msgs.msg import Point
 
-
-class MultiRewardEnv(MotionControlContinuousLaser):
+class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     def __init__(self,
-                    reward_function,
                     **kwargs):
         super().__init__(**kwargs)
             
+        reward_function='simple'
         # Dictionary of available reward functions #TODO: implement reward functions
         self.reward_functions = {
             "smooth": self.smooth_reward_scheme,
@@ -20,24 +21,28 @@ class MultiRewardEnv(MotionControlContinuousLaser):
 
         self.reward_scheme_name = reward_function
         # Set the reward function based on the argument
-        if reward_function in self.reward_functions:
-            self.reward_func = self.reward_functions[reward_function]
+        if self.reward_scheme_name in self.reward_functions:
+            self.reward_func = self.reward_functions[self.reward_scheme_name]
         else:
             raise ValueError(
                 f"Reward function '{reward_function}' not found. Available options: {list(self.reward_functions.keys())}"
             )
 
-        self.success_reward = 0
-        self.collision_reward = 0
-        self.goal_reward = 1
-        self.max_collision = 10000
-        self.max_step = 100
-        self.time_step = 1
-        self.verbose = True
-        self.world_frame_goal = (
-            self.init_position[0] + self.goal_position[0],
-            self.init_position[1] + self.goal_position[1],
-        )
+        # self.max_vel = self.range_dict['linear_velocity'][1]
+        # self.success_reward = 0
+        # self.collision_reward = 0
+        # self.goal_reward = 1
+        # self.max_collision = 10000
+        # self.max_step = 100
+        # self.time_step = 1
+        # self.verbose = True
+        # self.world_frame_goal = (
+        #     self.init_position[0] + self.goal_position[0],
+        #     self.init_position[1] + self.goal_position[1],
+        # )
+        
+        #self.prev_pos = Point(x=0.0, y=0.0, z=0.0)
+        #self.prev_psi = 0
 
     def step(self, action):
         # TODO: add to infos the reward function used, and the enviroment parameters
@@ -54,21 +59,27 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         
 
         # Get previous velocity, position and orientation
-        prev_pos, prev_psi = self._get_pos_psi()
-        prev_vel = self.gazebo_sim.get_velocity()
-
+        #prev_pos, prev_psi = self._get_pos_psi()
+        #prev_vel = self.gazebo_sim.get_velocity()
+        
+        # Add some random computations to increase load
+        # for _ in range(100):
+        #     x = np.random.random((100, 100))
+        #     y = np.random.random((100, 100))
+        #     z = np.dot(x, y)
+        #     w = np.linalg.svd(z)
+        
         # step the simulation
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi()
-        vel = self.gazebo_sim.get_velocity()
+        #vel = self.gazebo_sim.get_velocity()
+        prev_vel = 1
+        vel = 1
 
         # self.gazebo_sim.unpause()
         # compute observation
         obs = self._get_observation(pos, psi, action)
-
-        # compute termination
-        flip = pos.z > 0.1  # robot flip
 
         # compute termination
         flip = pos.z > 0.1  # robot flip
@@ -84,19 +95,20 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         self.collision_count += int(collided)
 
         termination = flip or success or self.collision_count >= self.max_collision
+        rew = 1
 
-        rew = self.reward_func(
-            prev_vel,
-            vel,
-            pos,
-            prev_pos,
-            prev_psi,
-            psi,
-            success,
-            collided,
-            truncation,
-            goal_pos,
-        )  #! Improve once reward schemes are implemented
+        # rew = self.reward_func(
+        #     prev_vel,
+        #     vel,
+        #     pos,
+        #     self.prev_pos,
+        #     self.prev_psi,
+        #     psi,
+        #     success,
+        #     collided,
+        #     truncation,
+        #     goal_pos,
+        # )  #! Improve once reward schemes are implemented
 
         self.last_goal_pos = goal_pos
 
@@ -113,7 +125,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         if truncation or termination:
             bn, nn = self.gazebo_sim.get_bad_vel_num()
 
-        return obs, rew, termination, truncation, info
+        return obs, rew, termination or truncation, info
 
     # TODO: implement total reward functions
     def _time_penalty(self, max_step):
@@ -273,7 +285,7 @@ class MultiRewardEnv(MotionControlContinuousLaser):
         # vector product between the two vectors
         F = np.cross(n_x_i + n_x_i_plus_1, pos_i_plus_1 - pos_i)
 
-        reward = 0.001 - np.norm(F)
+        reward = 0.001 - np.linalg.norm(F)
         return reward
 
     def _speed_reward_soft(self, last_vel, current_vel, max_vel, alpha=10, beta=20):
