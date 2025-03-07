@@ -309,8 +309,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
     def _obs_dist_reward(self, alpha=0.1):
         laser_data = self.gazebo_sim.get_laser_scan()
-        valid_ranges = [r for r in laser_data.ranges if r > 0 and r != float("inf")]
-        min_distance = min(valid_ranges)  # if valid_ranges else float('inf')
+        ranges = np.array(laser_data.ranges)
+        valid = (ranges > 0) & (ranges != np.inf)
+        if np.any(valid):
+            min_distance = np.min(ranges[valid])
+        else:
+            min_distance = float('inf')
         return min(0.01, alpha * min_distance)
 
         # min_dist = 0.34 + 0.2 # Radius of Jackal condering a radius from the lidar to the front right corner plus min dist of 0.2
