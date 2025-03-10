@@ -52,9 +52,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # TODO: Implement going straight reward > turning rewards - Bruno
         # TODO: Implement time penalty - Bruno
         # TODO: Implement local goal direction reward - Gabriel
-
-        
-
         # Get previous velocity, position and orientation
         #prev_pos, prev_psi = self._get_pos_psi()
         #prev_vel = self.gazebo_sim.get_velocity()
@@ -122,7 +119,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         if truncation or termination:
             bn, nn = self.gazebo_sim.get_bad_vel_num()
 
-        return obs, rew, termination or truncation, info
+        return obs, rew, termination, truncation, info
 
     # TODO: implement total reward functions
     def _time_penalty(self, max_step):
