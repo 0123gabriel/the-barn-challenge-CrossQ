@@ -95,6 +95,7 @@ def initialize_policy(config, env, init_buffer=True):
     pass
 
 def train(env, policy, buffer, config):
+    #!TODO modify this and implement CrossQ-SAC training (I think this shouldn't change much)
     env_config = config["env_config"]
     training_config = config["training_config"]
 
@@ -118,9 +119,9 @@ def train(env, policy, buffer, config):
     
     while n_steps < training_args["max_step"]:
         # Linear decaying exploration noise from "start" -> "end"
-        policy.exploration_noise = \
-            - (training_config["exploration_noise_start"] - training_config["exploration_noise_end"]) \
-            *  n_steps / training_args["max_step"] + training_config["exploration_noise_start"]
+        # policy.exploration_noise = \
+        #     - (training_config["exploration_noise_start"] - training_config["exploration_noise_end"]) \
+        #     *  n_steps / training_args["max_step"] + training_config["exploration_noise_start"]
         steps, epinfo = collector.collect(n_steps=training_args["collect_per_step"])
         
         n_steps += steps
