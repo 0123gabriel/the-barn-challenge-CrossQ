@@ -73,8 +73,7 @@ class CNNEncoder(Encoder):
         hidden_size=512,
         history_length=1,
         concat_action=False,
-        dropout=0.0,
-    ):
+        dropout=0.0,):
         super().__init__(
             input_dim=input_dim,
             num_layers=num_layers,
@@ -243,3 +242,4 @@ class TCNEncoder(Encoder):
         x = x.permute(0, 2, 1)
         x = self.net(x)
         return x.squeeze(-1)
+
