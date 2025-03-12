@@ -22,8 +22,8 @@ class JackalGazebo(gym.Env):
         time_step=1,
         slack_reward=-1,
         failure_reward=-50,
-        success_reward=0,
-        collision_reward=0,
+        success_reward=10,
+        collision_reward=-20,
         goal_reward=1,
         max_collision=10000,
         verbose=True,
@@ -96,7 +96,6 @@ class JackalGazebo(gym.Env):
     def step(self, action):
         """take an action and step the environment
         """
-        #print('==========================training mode==============================================================')
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi()
@@ -222,10 +221,17 @@ class JackalGazeboLaser(JackalGazebo):
         params:
             pos_1
         """
-        # TODO: revise and test doing it with one matrix multiplication
-        R_r2i = np.matrix([[np.cos(psi), -np.sin(psi), pos.x], [np.sin(psi), np.cos(psi), pos.y], [0, 0, 1]])
-        R_i2r = np.linalg.inv(R_r2i)
-        pi = np.matrix([[goal_pos[0]], [goal_pos[1]], [1]])
-        pr = np.matmul(R_i2r, pi)
-        lg = np.array([pr[0,0], pr[1, 0]])
-        return lg
+        # 
+        # R_r2i = np.matrix([[np.cos(psi), -np.sin(psi), pos.x], [np.sin(psi), np.cos(psi), pos.y], [0, 0, 1]])
+        # R_i2r = np.linalg.inv(R_r2i)
+        # pi = np.matrix([[goal_pos[0]], [goal_pos[1]], [1]])
+        # pr = np.matmul(R_i2r, pi)
+        # lg = np.array([pr[0,0], pr[1, 0]])
+        
+        # Directly compute the transformation
+        cos_psi = np.cos(psi)
+        sin_psi = np.sin(psi)
+        
+        dx = goal_pos[0] - pos.x
+        dy = goal_pos[1] - pos.y
+        return [dx * cos_psi + dy * sin_psi, -dx * sin_psi + dy * cos_psi]

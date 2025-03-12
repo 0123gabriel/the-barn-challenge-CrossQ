@@ -198,7 +198,7 @@ class MLP(nn.Module):
         for i in range(num_layers):
             input_dim = hidden_layer_size if i > 0 else self.input_dim
             layers.append(nn.Linear(input_dim, hidden_layer_size))
-            layers.append(nn.ReLU())
+            layers.append(nn.ReLU6())
 
         self.mlp = nn.Sequential(*layers)
 
