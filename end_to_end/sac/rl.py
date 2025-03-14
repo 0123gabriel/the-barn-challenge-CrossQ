@@ -4,11 +4,14 @@ import torch.optim as optim
 import torch.nn.functional as F
 import pickle
 import copy
-from utils import BatchRenorm
+from utils import BatchRenorm, SquashedNormal
+from net import get_activation, MLP
+
 
 from os.path import join
 
 import torch.nn as nn
+
 
 class CrossQ_SAC(object):
     def __init__(
@@ -59,7 +62,7 @@ class CrossQ_SAC(object):
         self._action_bias = torch.FloatTensor(
             (action_range[1] + action_range[0]) / 2.0
         ).to(device)
-    
+
     def select_action(self, states: torch.Tensor, train: bool) -> torch.Tensor:
         """
         input: state (torch.Tensor)
@@ -186,20 +189,22 @@ class CrossQ_SAC(object):
             replay_buffer.n_step_return(self.n_step, ind, self.gamma)
         )
         return state, action, next_state, reward, termination, truncation, gammas
-    
+
     def train(self, replay_buffer, batch_size=256):
-        state, action, next_state, reward, not_done, gammas = self.sample_transition(replay_buffer, batch_size)
+        state, action, next_state, reward, not_done, gammas = self.sample_transition(
+            replay_buffer, batch_size
+        )
         loss_info = self.train_rl(state, action, next_state, reward, not_done, gammas)
         return loss_info
-    
-    def grad_norm(self,model):
+
+    def grad_norm(self, model):
         total_norm = 0
         for p in model.parameters():
             param_norm = p.grad.data.norm(2).item() if p.grad is not None else 0
-            total_norm += param_norm ** 2
-        total_norm = total_norm ** (1. / 2)
+            total_norm += param_norm**2
+        total_norm = total_norm ** (1.0 / 2)
         return total_norm
-    
+
     def save(self, dir, filename):
         self.actor.to("cpu")
         with open(join(dir, filename + "_actor"), "wb") as f:
@@ -214,49 +219,24 @@ class CrossQ_SAC(object):
             self.actor_target = copy.deepcopy(self.actor)
         with open(join(dir, filename + "_noise"), "rb") as f:
             self.exploration_noise = pickle.load(f)
-            
-def get_activation(activation_choice: str) -> nn.Module:
-    if activation_choice.lower() == "relu6":
-        return nn.ReLU6
-    elif activation_choice.lower() == "tanh":
-        return nn.Tanh
-    elif activation_choice.lower() == "elu":
-        return nn.ELU
-    elif activation_choice.lower() == "relu":
-        return nn.ReLU
-    else:
-        raise ValueError(f"Unsupported activation function: {activation_choice}")
+
 
 class CrossQCritic(nn.Module):
-    #TODO: adjust this to work as the td3 critic, the problem is not making the NN too deep
-    #TODO: also make the network parameters adjustable from the configuration
-    #TODO: one option is to make a CrossQ-MLP for the head
-    def __init__(self, state_dim, action_dim, hidden_sizes=[512, 512], activation="tanh"):
-        super().__init__(state_dim, action_dim, hidden_sizes)
-        self.activation = get_activation(activation)
-        momentum = 0.01
+    # TODO: adjust this to work as the td3 critic, the problem is not making the NN too deep
+    # TODO: also make the network parameters adjustable from the configuration
+    # TODO: one option is to make a CrossQ-MLP for the head
+    def __init__(self, state_preprocess, head):
+        super(CrossQCritic, self).__init__()
 
-        self.q1 = nn.Sequential(
-            BatchRenorm(state_dim + action_dim, momentum=momentum),
-            nn.Linear(state_dim + action_dim, hidden_sizes[0]),
-            self.activation(),
-            BatchRenorm(hidden_sizes[0], momentum=momentum),
-            nn.Linear(hidden_sizes[0], hidden_sizes[1]),
-            self.activation(),
-            BatchRenorm(hidden_sizes[1], momentum=momentum),
-            nn.Linear(hidden_sizes[1], 1)
-        )
-        self.q2 = nn.Sequential(
-            BatchRenorm(state_dim + action_dim, momentum=momentum),
-            nn.Linear(state_dim + action_dim, hidden_sizes[0]),
-            self.activation(),
-            BatchRenorm(hidden_sizes[0], momentum=momentum),
-            nn.Linear(hidden_sizes[0], hidden_sizes[1]),
-            self.activation(),
-            BatchRenorm(hidden_sizes[1], momentum=momentum),
-            nn.Linear(hidden_sizes[1], 1)
-        )
-        self._initialize_weights()
+        # Q1 architecture
+        self.state_preprocess1 = state_preprocess
+        self.head1 = head
+        self.fc1 = nn.Linear(self.self_preprocess1.feature_dim, 1)
+
+        # Q2 architecture
+        self.state_preprocess2 = state_preprocess
+        self.head2 = head
+        self.fc2 = nn.Linear(self.self_preprocess2.feature_dim, 1)
 
     def _initialize_weights(self):
         for layer in list(self.q1) + list(self.q2):
@@ -264,9 +244,90 @@ class CrossQCritic(nn.Module):
                 nn.init.orthogonal_(layer.weight)
                 nn.init.zeros_(layer.bias)
 
-    def forward(self, state: torch.Tensor, action: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        x = torch.cat([state, action], dim=1)
-        return self.q1(x), self.q2(x)
+    def forward(
+        self, state: torch.Tensor, action: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        state1 = self.state_preprocess1(state) if self.state_preprocess1 else state
+        sa1 = torch.cat([state1, action], dim=1)
+        x1 = self.head1(sa1)
+        q1 = self.fc1(x1)
+
+        state2 = self.state_preprocess2(state) if self.state_preprocess2 else state
+        sa2 = torch.cat([state2, action], dim=1)
+        x2 = self.head2(sa2)
+        q2 = self.fc2(x2)
+
+        return q1, q2
+
+
+class Actor(nn.Module):
+    def __init__(
+        self,
+        state_preprocess,
+        head,
+        action_dim,
+        log_std_bounds: list[float] = [-20.0, 2.0],
+    ):
+        super(Actor, self).__init__()
+        self.state_preprocess = state_preprocess
+        self.head = head
+        
+        self.fc = nn.Linear(self.state_preprocess.feature_dim, action_dim)
+        
+        self.mean = nn.Linear(self.head.feature_dim, action_dim)
+        self.log_std = nn.Linear(self.head.feature_dim, action_dim)
+        
+        self.log_std_min, self.log_std_max = log_std_bounds
+
+    def forward(self, state):
+        s = self.state_preprocess(state) if self.state_preprocess else state
+        mean = self.mean(self.head(s))
+        log_std = self.log_std(self.head(s))
+        
+        log_std = torch.tanh(log_std)
+        log_std = self.log_std_min + 0.5 * (self.log_std_max - self.log_std_min) * (log_std + 1)
+        
+        return mean, log_std
+
+    def get_action(self, state):
+        mean, log_std = self.forward(state)
+        std = log_std.exp()
+        
+        # Reparametrization trick
+        normal = torch.distributions.Normal(mean, std)
+        epsilon = normal.rsample()
+        squashed_epsilon = torch.tanh(epsilon)
+        
+        # Action bounds
+        action = self.action_scale * squashed_epsilon + self.action_bias
+
+        # Adjust log probability to compensate for the tanh squashing.
+        # Using the change-of-variable formula:
+        # p_y(y) = p_x(x) * |dx/dy| => log p_y(y) = log p_x(x) + log |dx/dy|
+        # log p_y(y) = log p_x(x) - sum(log(1 - tanh(x)^2))
+        #log_prob = normal.log_prob(epsilon) - torch.log(self.action_scale * (1 - squashed_epsilon.pow(2)) + 1e-6)
+        log_prob = normal.log_prob(epsilon) - torch.log((1 - squashed_epsilon.pow(2)) + 1e-6)
+        log_prob = log_prob.sum(1, keepdim=True)
+        mean = torch.tanh(mean) * self.action_scale + self.action_bias
+
+        return action, log_prob, mean
+
+    def get_action_alt(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        # Forward pass
+        mean, log_std = self.forward(state)
+        std = log_std.exp()
+        
+        dist = SquashedNormal(mean, std)
+        
+        # Sample and compute log prob
+        sample = dist.rsample()
+        log_prob = dist.log_prob(sample).sum(1, keepdim=True)
+        
+        # Scale and shift action
+        action = sample * self.action_scale + self.action_bias
+        mean_action = dist.mean * self.action_scale + self.action_bias 
+        
+        return action, log_prob, mean_action
 
 class Model(nn.Module):
     def __init__(self, state_preprocess, head, state_dim, deterministic=False):
@@ -281,5 +342,34 @@ class Model(nn.Module):
             self.state_dim *= 2
             self.laser_dim *= 2
             self.feature_dim *= 2
-            
-        self.laser_state_fc =
+
+        self.laser_state_fc = nn.Sequential(
+            *[nn.Linear(self.laser_dim, 512), nn.Tanh()]
+        )
+        self.feature_state_fc = nn.Sequential(
+            *[nn.Linear(self.feature_dim, 512), nn.Tanh()]
+        )
+        self.reward_fc = nn.Linear(head.feature_dim, 1)
+        self.done_fc = nn.Linear(head.feature_dim, 1)
+
+    def forward(self, state, action):
+        s = self.state_preprocess(state) if self.state_preprocess else state
+        sa = torch.cat([s, action], dim=1)
+        x = self.head(sa)
+        ls = self.laser_state_fc(x)
+        fs = self.feature_state_fc(x)
+        r = self.reward_fc(x)
+        d = self.done_fc(x)
+        if self.deterministic:
+            s = torch.cat([ls, fs], dim=1)
+        else:
+            s = torch.cat(
+                [
+                    ls[:, : self.laser_dim // 2],
+                    fs[:, : self.feature_dim // 2],
+                    ls[:, self.laser_dim // 2],
+                    fs[:, self.feature_dim // 2],
+                ],
+                axis=1,
+            )
+        return s, r, d
