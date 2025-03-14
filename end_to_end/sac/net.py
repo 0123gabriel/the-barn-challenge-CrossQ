@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from utils import BatchRenorm
 
 
 class Encoder(torch.nn.Module):
@@ -73,8 +74,7 @@ class CNNEncoder(Encoder):
         hidden_size=512,
         history_length=1,
         concat_action=False,
-        dropout=0.0,
-    ):
+        dropout=0.0,):
         super().__init__(
             input_dim=input_dim,
             num_layers=num_layers,
@@ -243,3 +243,64 @@ class TCNEncoder(Encoder):
         x = x.permute(0, 2, 1)
         x = self.net(x)
         return x.squeeze(-1)
+
+def get_activation(activation_choice: str) -> nn.Module:
+    if activation_choice.lower() == "relu6":
+        return nn.ReLU6
+    elif activation_choice.lower() == "tanh":
+        return nn.Tanh
+    elif activation_choice.lower() == "elu":
+        return nn.ELU
+    elif activation_choice.lower() == "relu":
+        return nn.ReLU
+    else:
+        raise ValueError(f"Unsupported activation function: {activation_choice}")
+
+class MLP(nn.Module):
+    def __init__(self, input_dim, num_layers=2, hidden_layer_size=512,activation="relu6"):
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_size = hidden_layer_size
+        
+        layers = []
+        for i in range(num_layers):
+            input_dim = hidden_layer_size if i > 0 else self.input_dim
+            layers.append(nn.Linear(input_dim, hidden_layer_size))
+            layers.append(get_activation(activation)())
+
+        self.mlp = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.mlp(x)
+    
+class MLP_CrossQ(nn.Module):
+    def __init__(self, input_dim, num_layers=2, hidden_layer_size=512, activation="relu6"):
+        """
+        MLP CrossQ style:
+        - num_layers: 
+            - 1 means BatchRenorm + Linear + Activation + BatchRenorm
+            - 2 means BatchRenorm + Linear + Activation + BatchRenorm + Linear + Activation + BatchRenorm
+        """
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_size = hidden_layer_size
+        
+        layers = []
+        for i in range(num_layers):
+            input_dim = hidden_layer_size if i > 0 else self.input_dim
+            layers.append(BatchRenorm(input_dim))
+            layers.append(nn.Linear(input_dim, hidden_layer_size))
+            layers.append(get_activation(activation)())
+
+        layers.append(BatchRenorm(hidden_layer_size, momentum=0.01))
+        self.mlp = nn.Sequential(*layers)
+        self._initialize_weights()
+    
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.orthogonal_(m.weight)
+                nn.init.zeros_(m.bias, 0)
+    
+    def forward(self, x):
+        return self.mlp(x)

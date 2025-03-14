@@ -6,12 +6,12 @@ import torchsummary
 
 # Define dimensions
 seq_length = 100
-input_dim = 24
+input_dim = 724
 hidden_dim = 128
 output_dim = 64
 batch_size = 32
 num_layers = 2
-history_length = 1
+history_length = 4
 
 # Create models
 models = {
@@ -24,7 +24,7 @@ models = {
 
 # Test each model
 for name, model in models.items():
-    print(f"Testing {name}")
+    print(f"\nTesting {name}")
     x = torch.randn(batch_size, seq_length, input_dim)
     y = model(x)
     print(f"Output shape: {y.shape}")
