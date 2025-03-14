@@ -114,8 +114,8 @@ def initialize_policy(config, env, init_buffer=True):
     input_dim = training_config["hidden_layer_size"]
     actor = Actor(
         state_preprocess= get_encoder(encoder_type, encoder_args),
-        head= MLP_CrossQ(input_dim, training_config['encoder_num_layers'], training_config['encoder_hidden_layer_size'])
-        
+        head= MLP_CrossQ(input_dim, training_config['encoder_num_layers'], training_config['encoder_hidden_layer_size']),
+        action_dim= action_dim,
     )
     pass
 
