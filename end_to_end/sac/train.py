@@ -20,6 +20,7 @@ from sac.collector import LocalCollector
 
 from rl import Actor, CrossQCritic, CrossQ_SAC
 from net import MLP_CrossQ
+from utils import ReplayBuffer
 
 def initialize_config(config_path, save_path):
     # Load the config files
@@ -114,10 +115,46 @@ def initialize_policy(config, env, init_buffer=True):
     input_dim = training_config["hidden_layer_size"]
     actor = Actor(
         state_preprocess= get_encoder(encoder_type, encoder_args),
-        head= MLP_CrossQ(input_dim, training_config['encoder_num_layers'], training_config['encoder_hidden_layer_size'])
-        
+        head= MLP_CrossQ(input_dim, training_config['encoder_num_layers'], training_config['encoder_hidden_layer_size']),
+        action_dim= action_dim,
+    ).to(device)
+    
+    print("Total number of parameters: %d" %sum(p.numel() for p in actor.parameters()))
+    input_dim += np.prod(action_dim)
+    
+    critic = CrossQCritic(
+        state_preprocess= get_encoder(encoder_type, encoder_args),
+        head= MLP_CrossQ(input_dim, training_config['encoder_num_layers'], training_config['encoder_hidden_layer_size']),
+    ).to(device)
+    
+    critic_optim = torch.optim.Adam(critic.parameters(), lr=training_config["critic_lr"])
+    actor_optim = torch.optim.Adam(actor.parameters(), lr=training_config["actor_lr"])
+    
+    policy = CrossQ_SAC(
+        actor=actor, actor_optim=actor_optim,
+        critic=critic, critic_optim=critic_optim,
+        action_range=[action_space_low, action_space_high],
+        device=device
+        **training_config["policy_args"] #TODO: review this
     )
-    pass
+    
+    if init_buffer:
+        try:
+            config['env_config']["reward_norm"]
+        except KeyError:
+            config['env_config']["reward_norm"] = False
+        
+        buffer = ReplayBuffer(
+                state_dim=state_dim,
+                action_dim=action_dim,
+                reward_norm=config['env_config']["reward_norm"],
+                **training_config["buffer_args"]
+            )
+    else:
+        buffer = None
+        
+    return policy, buffer
+    
 
 def train(env, policy, buffer, config):
     #!TODO modify this and implement CrossQ-SAC training (I think this shouldn't change much)
