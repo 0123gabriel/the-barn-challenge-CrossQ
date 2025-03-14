@@ -177,7 +177,9 @@ class DilatedCNNEncoder(Encoder):
         )
 
         layers = []
+        print("num_layers", num_layers)
         for i in range(num_layers):
+            print(2**i)
             layers.append(
                 nn.Conv1d(
                     in_channels=input_dim if i == 0 else hidden_size,

@@ -10,7 +10,7 @@ input_dim = 724
 hidden_dim = 128
 output_dim = 64
 batch_size = 32
-num_layers = 2
+num_layers = 3
 history_length = 4
 
 # Create models
@@ -19,7 +19,7 @@ models = {
     #'MLP': MLPEncoder(input_dim, num_layers, hidden_dim, history_length),
     'RNN': RNNEncoder(input_dim, num_layers, hidden_dim, history_length),
     'TCN': TCNEncoder(input_dim, num_layers, hidden_dim, history_length),
-    'DilatedCNN': DilatedCNNEncoder(input_dim, hidden_dim, history_length)
+    'DilatedCNN': DilatedCNNEncoder(input_dim, num_layers, hidden_dim, history_length)
 }
 
 # Test each model
