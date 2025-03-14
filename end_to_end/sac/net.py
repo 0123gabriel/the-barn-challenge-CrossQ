@@ -274,7 +274,7 @@ class MLP(nn.Module):
         return self.mlp(x)
     
 class MLP_CrossQ(nn.Module):
-    def __init__(self, input_dim, num_layers=2, hidden_layer_size=512,activation="relu6"):
+    def __init__(self, input_dim, num_layers=2, hidden_layer_size=512, activation="relu6"):
         """
         MLP CrossQ style:
         - num_layers: 

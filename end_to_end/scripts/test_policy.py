@@ -47,6 +47,7 @@ def main(args):
     ep = 0
     while ep < args.repeats:
         obs = env.reset()
+        print('Reset observation:', obs.shape)
         ep += 1
         step = 0
         done = False
@@ -56,6 +57,7 @@ def main(args):
             else:
                 actions = env_config["kwargs"]["param_init"]
             obs_new, rew, done, info = env.step(actions)
+            print('New observation:', obs_new.shape)
             info["world"] = world_name
             obs = obs_new
             step += 1
