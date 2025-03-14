@@ -18,6 +18,9 @@ from pprint import pformat
 from envs.wrappers import StackFrame
 from sac.collector import LocalCollector
 
+from rl import Actor, CrossQCritic, CrossQ_SAC
+from net import MLP_CrossQ
+
 def initialize_config(config_path, save_path):
     # Load the config files
     with open(config_path, 'r') as f:
@@ -92,6 +95,28 @@ def get_encoder(encoder_type, args):
 
 def initialize_policy(config, env, init_buffer=True):
     #!TODO: implement this function with CrossQ
+    training_config = config["training_config"]
+    
+    state_dim = env.observation_space.shape
+    action_dim = np.prod(env.action_space.shape)
+    action_space_low = env.action_space.low
+    action_space_high = env.action_space.high
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    encoder_type = training_config["encoder"]
+    encoder_args = {
+        "input_dim": state_dim,
+        "num_layers": training_config["encoder_num_layers"],
+        "hidden_size": training_config["encoder_hidden_layer_size"],
+        "history_length": config["env_config"]["stack_frame"],
+    }
+    
+    input_dim = training_config["hidden_layer_size"]
+    actor = Actor(
+        state_preprocess= get_encoder(encoder_type, encoder_args),
+        head= MLP_CrossQ(input_dim, training_config['encoder_num_layers'], training_config['encoder_hidden_layer_size']),
+        action_dim= action_dim,
+    )
     pass
 
 def train(env, policy, buffer, config):
