@@ -22,11 +22,11 @@ class CrossQ_SAC(object):
         critic_optim,
         action_range,
         device="cpu",
-        gamma=0.99,
-        tau=5e-3,
-        alpha_lr=0.005,
-        n_step=4,
-        target_update_freq=2,
+        gamma=0.99,  # policy_arg
+        tau=5e-3,  # policy_arg
+        alpha_lr=0.005,  # policy_arg
+        n_step=4,  # policy_arg
+        target_update_freq=2,  # policy_arg
     ):
         self.actor = actor
         self.actor_optim = actor_optim
@@ -271,33 +271,35 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         self.state_preprocess = state_preprocess
         self.head = head
-        
+
         self.fc = nn.Linear(self.state_preprocess.feature_dim, action_dim)
-        
+
         self.mean = nn.Linear(self.head.feature_dim, action_dim)
         self.log_std = nn.Linear(self.head.feature_dim, action_dim)
-        
+
         self.log_std_min, self.log_std_max = log_std_bounds
 
     def forward(self, state):
         s = self.state_preprocess(state) if self.state_preprocess else state
         mean = self.mean(self.head(s))
         log_std = self.log_std(self.head(s))
-        
+
         log_std = torch.tanh(log_std)
-        log_std = self.log_std_min + 0.5 * (self.log_std_max - self.log_std_min) * (log_std + 1)
-        
+        log_std = self.log_std_min + 0.5 * (self.log_std_max - self.log_std_min) * (
+            log_std + 1
+        )
+
         return mean, log_std
 
     def get_action(self, state):
         mean, log_std = self.forward(state)
         std = log_std.exp()
-        
+
         # Reparametrization trick
         normal = torch.distributions.Normal(mean, std)
         epsilon = normal.rsample()
         squashed_epsilon = torch.tanh(epsilon)
-        
+
         # Action bounds
         action = self.action_scale * squashed_epsilon + self.action_bias
 
@@ -305,29 +307,34 @@ class Actor(nn.Module):
         # Using the change-of-variable formula:
         # p_y(y) = p_x(x) * |dx/dy| => log p_y(y) = log p_x(x) + log |dx/dy|
         # log p_y(y) = log p_x(x) - sum(log(1 - tanh(x)^2))
-        #log_prob = normal.log_prob(epsilon) - torch.log(self.action_scale * (1 - squashed_epsilon.pow(2)) + 1e-6)
-        log_prob = normal.log_prob(epsilon) - torch.log((1 - squashed_epsilon.pow(2)) + 1e-6)
+        # log_prob = normal.log_prob(epsilon) - torch.log(self.action_scale * (1 - squashed_epsilon.pow(2)) + 1e-6)
+        log_prob = normal.log_prob(epsilon) - torch.log(
+            (1 - squashed_epsilon.pow(2)) + 1e-6
+        )
         log_prob = log_prob.sum(1, keepdim=True)
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
 
         return action, log_prob, mean
 
-    def get_action_alt(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def get_action_alt(
+        self, state: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         # Forward pass
         mean, log_std = self.forward(state)
         std = log_std.exp()
-        
+
         dist = SquashedNormal(mean, std)
-        
+
         # Sample and compute log prob
         sample = dist.rsample()
         log_prob = dist.log_prob(sample).sum(1, keepdim=True)
-        
+
         # Scale and shift action
         action = sample * self.action_scale + self.action_bias
-        mean_action = dist.mean * self.action_scale + self.action_bias 
-        
+        mean_action = dist.mean * self.action_scale + self.action_bias
+
         return action, log_prob, mean_action
+
 
 class Model(nn.Module):
     def __init__(self, state_preprocess, head, state_dim, deterministic=False):
