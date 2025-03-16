@@ -1,4 +1,6 @@
 import os
+import argparse
+import logging
 import yaml
 import pickle
 from os.path import join, dirname, abspath, exists
@@ -20,6 +22,7 @@ from sac.collector import LocalCollector
 
 from rl import Actor, CrossQCritic, CrossQ_SAC
 from net import MLP_CrossQ
+from utils import Env_Selector
 
 def initialize_config(config_path, save_path):
     # Load the config files
@@ -67,9 +70,14 @@ def initialize_logging(config):
 
     return save_path, writer
 
+# TODO: implement this function
+def get_random_world():
+    pass
+
 #TODO: modify this function
 def initialize_envs(config):
     env_config = config["env_config"]
+    env_config["kwargs"]["world_name"] = get_random_world()
     if env_config["use_condor"]:
         env_config["kwargs"]["init_sim"] = False
     
@@ -119,8 +127,9 @@ def initialize_policy(config, env, init_buffer=True):
     )
     pass
 
-def train(env, policy, buffer, config):
+def train(env_selector, policy, buffer, config):
     #!TODO modify this and implement CrossQ-SAC training (I think this shouldn't change much)
+    env = env_selector.get_random_env()
     env_config = config["env_config"]
     training_config = config["training_config"]
 
@@ -143,6 +152,7 @@ def train(env, policy, buffer, config):
     t0 = time.time()
     
     while n_steps < training_args["max_step"]:
+
         # Linear decaying exploration noise from "start" -> "end"
         # policy.exploration_noise = \
         #     - (training_config["exploration_noise_start"] - training_config["exploration_noise_end"]) \
@@ -194,6 +204,33 @@ def train(env, policy, buffer, config):
                 writer.add_scalar(k + "/Time", np.mean([epinfo["ep_time"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
                 writer.add_scalar(k + "/Collision", np.mean([epinfo["collision"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
     
-    env.close()
+        env.close()
+        time.sleep(5)
+    
+        # Change env for next iteration
+        env = env_selector.get_random_env()
+        collector.set_env(env)
     
 
+if __name__ == "__main__":
+    torch.set_num_threads(8)
+    parser = argparse.ArgumentParser(description = 'Start condor training')
+    parser.add_argument('--config_path', dest='config_path', default="../configs/config.ymal")
+    logging.getLogger().setLevel("INFO")
+    args = parser.parse_args()
+    CONFIG_PATH = args.config_path
+    SAVE_PATH = "logging/"
+    print(">>>>>>>> Loading the configuration from %s" % CONFIG_PATH)
+    config = initialize_config(CONFIG_PATH, SAVE_PATH)
+
+    seed(config)
+    print(">>>>>>>> Creating the environments")
+    worlds_directory = "/root/e2e_crossq/src/the-barn-challenge-CrossQ/jackal_helper/worlds/BARN" # This should be automated
+    env_selector = Env_Selector(config, worlds_directory)
+    env = env_selector.get_random_env()
+    #env = train_envs if config["env_config"]["use_condor"] else train_envs
+    
+    print(">>>>>>>> Initializing the policy")
+    policy, buffer = initialize_policy(config, env)
+    print(">>>>>>>> Start training")
+    train(env_selector, policy, buffer, config)

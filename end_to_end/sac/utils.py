@@ -1,6 +1,10 @@
+import glob
+import os
 import numpy as np
 import torch
 import torch.nn as nn
+import gym
+from envs.wrappers import StackFrame
 from torch.distributions import Normal, TransformedDistribution, TanhTransform
 
 
@@ -267,3 +271,34 @@ class BatchRenorm(nn.Module):
             x = (x - self.running_mean.view(view_shape)) / running_std.view(view_shape)
 
         return x * self.weight.view(view_shape) + self.bias.view(view_shape)
+    
+    
+class Env_Selector():
+    def __init__(self, config, worlds_directory):
+        self.config = config
+        self.worlds = self.load_worlds_files(worlds_directory)
+
+    def load_worlds_files(self, worlds_dir):
+        # TODO FOR CURRICULUM LEARNING: load the selected worlds by CL using a preloaded csv file
+        # Get all .world files in the directory
+        world_files = glob.glob(os.path.join(worlds_dir, "world_*.world"))
+        return world_files
+    
+    def get_random_world(self):
+        return np.random.choice(self.worlds)
+
+    def get_random_env(self):
+        env_config = self.config["env_config"]
+        env_config["kwargs"]["world_name"] = self.get_random_world()
+        #if env_config["use_condor"]:
+        #    env_config["kwargs"]["init_sim"] = False
+    
+        # if not env_config["use_condor"]:
+        env = gym.make(env_config["env_id"], **env_config["kwargs"])
+        env = StackFrame(env, stack_frame=env_config["stack_frame"])
+        # else:
+            # If use condor, we want to avoid initializing env instance from the central learner
+            # So here we use a fake env with obs_space and act_space information
+        #    print("    >>>> Using actors on Condor")
+        #    env = InfoEnv(config)
+        return env

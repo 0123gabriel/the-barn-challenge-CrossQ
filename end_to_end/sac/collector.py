@@ -47,6 +47,7 @@ class LocalCollector(object):
             world = int(info['world'].split(
                 "_")[-1].split(".")[0])
             collision_reward = -int(info['collided'])
+            
             if self.policy.safe_rl:
                 self.buffer.add(obs, act,
                                 obs_new, rew,
@@ -70,4 +71,8 @@ class LocalCollector(object):
         self.last_obs = obs
         return n_steps_curr, results
     
+    
+    def set_env(self, env):
+        self.env = env
+        self.last_obs = None
     
