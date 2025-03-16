@@ -19,8 +19,9 @@ from envs.wrappers import StackFrame
 from sac.collector import LocalCollector
 
 from rl import Actor, CrossQCritic, CrossQ_SAC
-from net import MLP_CrossQ
+from net import MLP_CrossQ, RNNEncoder, CNNEncoder, TCNEncoder, DilatedCNNEncoder
 from utils import ReplayBuffer
+from torch.utils.tensorboard import SummaryWriter
 
 def initialize_config(config_path, save_path):
     # Load the config files
@@ -91,8 +92,16 @@ def seed(config):
     torch.manual_seed(env_config['seed'])
     
 def get_encoder(encoder_type, args):
-    #!TODO: implement this function with useful possible encoders
-    pass
+    if encoder_type == "rnn":
+        return RNNEncoder(**args)
+    elif encoder_type == "cnn":
+        return CNNEncoder(**args)
+    elif encoder_type == "tcn":
+        return TCNEncoder(**args)
+    elif encoder_type == "dilated_cnn":
+        return DilatedCNNEncoder(**args)
+    else:
+        raise NotImplementedError
 
 def initialize_policy(config, env, init_buffer=True):
     #!TODO: implement this function with CrossQ
@@ -213,7 +222,6 @@ def train(env, policy, buffer, config):
             "fps": n_steps / (t1 - t0),
             "n_episode": n_ep,
             "Steps": n_steps,
-            "Exploration_noise": policy.exploration_noise,
         }
         log.update(loss_info)
         print(pformat(log))
