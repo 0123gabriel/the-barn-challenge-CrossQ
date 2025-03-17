@@ -281,15 +281,22 @@ class Env_Selector():
     def load_worlds_files(self, worlds_dir):
         # TODO FOR CURRICULUM LEARNING: load the selected worlds by CL using a preloaded csv file
         # Get all .world files in the directory
-        world_files = glob.glob(os.path.join(worlds_dir, "world_*.world"))
+        #world_files = glob.glob(os.path.join(worlds_dir, "world_*.world"))
+        #print(world_files)
+        
+        world_files = os.listdir(worlds_dir)
+        #print(world_files)
         return world_files
     
     def get_random_world(self):
-        return np.random.choice(self.worlds)
+        choice = np.random.choice(self.worlds)
+        #print(choix)
+        return 'BARN/' + choice
 
     def get_random_env(self):
         env_config = self.config["env_config"]
-        env_config["kwargs"]["world_name"] = self.get_random_world()
+        env_config["kwargs"]["init_sim"] = False
+        env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()
         #if env_config["use_condor"]:
         #    env_config["kwargs"]["init_sim"] = False
     

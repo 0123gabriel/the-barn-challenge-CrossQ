@@ -27,6 +27,8 @@ from utils import Env_Selector, ReplayBuffer
 from net import MLP_CrossQ, RNNEncoder, CNNEncoder, TCNEncoder, DilatedCNNEncoder
 from torch.utils.tensorboard import SummaryWriter
 
+import envs.registration # register the env to run train.py
+
 
 def initialize_config(config_path, save_path):
     # Load the config files
@@ -92,7 +94,6 @@ def initialize_envs(config):
 
 def seed(config):
     env_config = config["env_config"]
-
     np.random.seed(env_config["seed"])
     torch.manual_seed(env_config["seed"])
 
@@ -183,18 +184,18 @@ def initialize_policy(config, env, init_buffer=True):
     return policy, buffer
 
 
-def train(env_selector, policy, buffer, config):
+def train(env_selector, env, policy, buffer, config):
     #!TODO modify this and implement CrossQ-SAC training (I think this shouldn't change much)
-    env = env_selector.get_random_env()
     env_config = config["env_config"]
     training_config = config["training_config"]
 
     save_path, writer = initialize_logging(config)
     print("    >>>> initialized logging")
-
+    
     collector = LocalCollector(policy, env, buffer)
 
     training_args = training_config["training_args"]
+    
     print("    >>>> Pre-collect experience")
     collector.collect(n_steps=training_config["pre_collect"])
     print("    >>>> Start training")
@@ -207,7 +208,7 @@ def train(env_selector, policy, buffer, config):
     t0 = time.time()
 
     while n_steps < training_args["max_step"]:
-
+    
         # Linear decaying exploration noise from "start" -> "end"
         # policy.exploration_noise = \
         #     - (training_config["exploration_noise_start"] - training_config["exploration_noise_end"]) \
@@ -257,7 +258,7 @@ def train(env_selector, policy, buffer, config):
                 writer.add_scalar(k + "/Success", np.mean([epinfo["success"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
                 writer.add_scalar(k + "/Time", np.mean([epinfo["ep_time"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
                 writer.add_scalar(k + "/Collision", np.mean([epinfo["collision"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
-    
+
         env.close()
         time.sleep(5)
     
@@ -269,7 +270,7 @@ def train(env_selector, policy, buffer, config):
 if __name__ == "__main__":
     torch.set_num_threads(8)
     parser = argparse.ArgumentParser(description = 'Start condor training')
-    parser.add_argument('--config_path', dest='config_path', default="../configs/config.ymal")
+    parser.add_argument('--config_path', dest='config_path', default="../data/config.yaml")
     logging.getLogger().setLevel("INFO")
     args = parser.parse_args()
     CONFIG_PATH = args.config_path
@@ -280,11 +281,20 @@ if __name__ == "__main__":
     seed(config)
     print(">>>>>>>> Creating the environments")
     worlds_directory = "/root/e2e_crossq/src/the-barn-challenge-CrossQ/jackal_helper/worlds/BARN" # This should be automated
-    env_selector = Env_Selector(config, worlds_directory)
-    env = env_selector.get_random_env()
+    #env_selector = Env_Selector(config, worlds_directory)
+    #env = env_selector.get_random_env()
+    env_config = config["env_config"]
+    # env_config["kwargs"]["init_sim"] = False
+    env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()
+    #if env_config["use_condor"]:
+    #    env_config["kwargs"]["init_sim"] = False
+
+    # if not env_config["use_condor"]:
+    env = gym.make(env_config["env_id"], **env_config["kwargs"])
+    env = StackFrame(env, stack_frame=env_config["stack_frame"])
     #env = train_envs if config["env_config"]["use_condor"] else train_envs
     
     print(">>>>>>>> Initializing the policy")
     policy, buffer = initialize_policy(config, env)
     print(">>>>>>>> Start training")
-    train(env_selector, policy, buffer, config)
+    train(env_selector, env, policy, buffer, config)

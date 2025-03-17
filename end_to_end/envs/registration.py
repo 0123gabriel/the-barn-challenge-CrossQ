@@ -14,6 +14,6 @@ register(
 
 # Multi rewards envs
 register(
-    id="muti_rewards_env-v0", 
+    id="multi_rewards_env-v0", 
     entry_point="envs.multi_reward:MultiRewardEnv"
 )

@@ -1,7 +1,7 @@
 env_config:
-  use_condor: True
+  use_condor: False
   #env_id: "motion_control_continuous_laser-v0"
-  env_id: "muti_rewards_env-v0"
+  env_id: "multi_rewards_env-v0"
   seed: 14
   stack_frame: 4   # span 1, 4, 8
   kwargs:
@@ -11,9 +11,9 @@ env_config:
     max_step: 400
     time_step: 0.2
     slack_reward: 0
-    collision_reward: -10
-    failure_reward: -50
-    success_reward: 20
+    collision_reward: -2
+    failure_reward: -5
+    success_reward: 2
     goal_reward: 1
     max_collision: 1
     init_position: [-2, 3, 1.57]

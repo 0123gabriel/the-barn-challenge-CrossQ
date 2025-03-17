@@ -1,6 +1,6 @@
 
 from os.path import exists, join
-from numpy import np
+import numpy as np
 import time
 import logging
 import re

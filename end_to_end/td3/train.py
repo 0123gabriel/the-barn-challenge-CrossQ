@@ -312,7 +312,7 @@ def train(env, policy, buffer, config):
 if __name__ == "__main__":
     torch.set_num_threads(8)
     parser = argparse.ArgumentParser(description = 'Start condor training')
-    parser.add_argument('--config_path', dest='config_path', default="../configs/config.ymal")
+    parser.add_argument('--config_path', dest='config_path', default="../data/config.yaml")
     logging.getLogger().setLevel("INFO")
     args = parser.parse_args()
     CONFIG_PATH = args.config_path

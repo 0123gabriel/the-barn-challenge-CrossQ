@@ -1,3 +1,4 @@
+from typing import Tuple, List
 import numpy as np
 import torch
 import torch.optim as optim
@@ -246,7 +247,7 @@ class CrossQCritic(nn.Module):
 
     def forward(
         self, state: torch.Tensor, action: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         state1 = self.state_preprocess1(state) if self.state_preprocess1 else state
         sa1 = torch.cat([state1, action], dim=1)
         x1 = self.head1(sa1)
@@ -266,7 +267,7 @@ class Actor(nn.Module):
         state_preprocess,
         head,
         action_dim,
-        log_std_bounds: list[float] = [-20.0, 2.0],
+        log_std_bounds: List[float] = [-20.0, 2.0],
     ):
         super(Actor, self).__init__()
         self.state_preprocess = state_preprocess
@@ -318,7 +319,7 @@ class Actor(nn.Module):
 
     def get_action_alt(
         self, state: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         # Forward pass
         mean, log_std = self.forward(state)
         std = log_std.exp()

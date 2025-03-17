@@ -32,7 +32,8 @@ def main(args):
         config = yaml.load(f, Loader=yaml.FullLoader)
     env_config = config['env_config']
     world_name = get_world_name(config, args.id)
-
+    print(world_name)
+    
     env_config["kwargs"]["world_name"] = world_name
     if args.gui:
         env_config["kwargs"]["gui"] = True
