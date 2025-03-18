@@ -28,7 +28,7 @@ env_config:
 training_config:
   algorithm: "TD3"
   network: "mlp"
-  encoder: "mlp"  # span "mlp", "cnn", "rnn", "transformer"
+  encoder: "cnn"  # span "mlp", "cnn", "rnn", "transformer"
   buffer_size: 200000
   actor_lr: 0.00001
   critic_lr: 0.00002
@@ -58,9 +58,9 @@ training_config:
   policy_args:
     tau: 0.005
     gamma: 0.99
-    policy_noise: 0.2
+    #policy_noise: 0.2
     update_actor_freq: 2
-    noise_clip: 0.5
+    #noise_clip: 0.5
     n_step: 4
 
   training_args:

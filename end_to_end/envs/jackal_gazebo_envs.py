@@ -58,6 +58,7 @@ class JackalGazebo(gym.Env):
 
         # launch gazebo
         if init_sim:
+            print('HERE IS THE ERROR ============================================================================')
             rospy.logwarn(">>>>>>>>>>>>>>>>>> Load world: %s <<<<<<<<<<<<<<<<<<" %(world_name))
             rospack = rospkg.RosPack()
             self.BASE_PATH = rospack.get_path('jackal_helper')

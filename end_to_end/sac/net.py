@@ -30,6 +30,9 @@ class Encoder(torch.nn.Module):
         super().__init__()
         self.hidden_size = self.feature_dim = hidden_size
 
+    def get_feature_dim(self):
+        return self.feature_dim
+    
     def forward(self, states, actions=None):
         return None
 
@@ -83,11 +86,12 @@ class CNNEncoder(Encoder):
             concat_action=concat_action,
             dropout=dropout,
         )
-
+        print(self.feature_dim)
+        #print(input_dim)
         layers = []
         if num_layers > 1:
             for i in range(num_layers - 1):
-                input_channel = hidden_size if i > 0 else input_dim
+                input_channel = hidden_size if i > 0 else input_dim[0]
                 layers.append(
                     nn.Conv1d(
                         in_channels=input_channel,
@@ -286,6 +290,7 @@ class MLP_CrossQ(nn.Module):
         super().__init__()
         self.input_dim = input_dim
         self.hidden_size = hidden_layer_size
+        self.feature_dim = hidden_layer_size
         
         layers = []
         for i in range(num_layers):
@@ -302,7 +307,7 @@ class MLP_CrossQ(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.orthogonal_(m.weight)
-                nn.init.zeros_(m.bias, 0)
+                nn.init.zeros_(m.bias)
     
     def forward(self, x):
         return self.mlp(x)

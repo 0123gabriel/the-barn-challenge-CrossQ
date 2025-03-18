@@ -23,6 +23,7 @@ class LocalCollector(object):
         self.global_steps = 0
     
     def collect(self, n_steps):
+        print('Collect first line')
         n_steps_curr = 0
         env = self.env
         policy = self.policy
@@ -33,9 +34,14 @@ class LocalCollector(object):
         
         if self.last_obs is not None:
             obs = self.last_obs
+            print('Last obs')
         else:
+            print('Before reset')
             obs = env.reset()
+            print('Env reset called')
+            
         while n_steps_curr < n_steps:
+            print(n_steps_curr)
             act = policy.select_action(obs)
             obs_new, rew, terminated, truncated, info = env.step(act)
             obs = obs_new

@@ -295,8 +295,10 @@ class Env_Selector():
 
     def get_random_env(self):
         env_config = self.config["env_config"]
-        env_config["kwargs"]["init_sim"] = False
-        env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()
+        env_config["kwargs"]["init_sim"] = True
+        random_world = self.get_random_world()
+        print(random_world)
+        env_config["kwargs"]["world_name"] = random_world
         #if env_config["use_condor"]:
         #    env_config["kwargs"]["init_sim"] = False
     

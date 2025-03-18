@@ -112,6 +112,7 @@ class GazeboSimulation():
         data = None
         while data is None:
             try:
+                print('Waiting for message')
                 data = rospy.wait_for_message('front/scan', LaserScan, timeout=5)
             except:
                 pass

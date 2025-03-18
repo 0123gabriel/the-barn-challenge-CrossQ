@@ -8,7 +8,7 @@ from geometry_msgs.msg import Point
 log_dir = "logs" # TODO set this on the config file
 
 class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
-    def __init__(self, reward_function = 'mixed', use_wandb=True, **kwargs):
+    def __init__(self, reward_function = 'mixed', use_wandb=False, **kwargs):
         super().__init__(**kwargs)
 
         self.use_wandb = use_wandb

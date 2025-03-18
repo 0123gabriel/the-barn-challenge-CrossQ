@@ -156,14 +156,14 @@ def initialize_policy(config, env, init_buffer=True):
         critic.parameters(), lr=training_config["critic_lr"]
     )
     actor_optim = torch.optim.Adam(actor.parameters(), lr=training_config["actor_lr"])
-
+    print(device)
     policy = CrossQ_SAC(
         actor=actor,
         actor_optim=actor_optim,
         critic=critic,
         critic_optim=critic_optim,
         action_range=[action_space_low, action_space_high],
-        device=device ** training_config["policy_args"],  # TODO: review this
+        device=device, **training_config["policy_args"],  # TODO: review this
     )
 
     if init_buffer:
@@ -176,7 +176,7 @@ def initialize_policy(config, env, init_buffer=True):
             state_dim=state_dim,
             action_dim=action_dim,
             reward_norm=config["env_config"]["reward_norm"],
-            **training_config["buffer_args"],
+            #**training_config["buffer_args"],
         )
     else:
         buffer = None
@@ -281,17 +281,17 @@ if __name__ == "__main__":
     seed(config)
     print(">>>>>>>> Creating the environments")
     worlds_directory = "/root/e2e_crossq/src/the-barn-challenge-CrossQ/jackal_helper/worlds/BARN" # This should be automated
-    #env_selector = Env_Selector(config, worlds_directory)
-    #env = env_selector.get_random_env()
-    env_config = config["env_config"]
+    env_selector = Env_Selector(config, worlds_directory)
+    env = env_selector.get_random_env()
+    #env_config = config["env_config"]
     # env_config["kwargs"]["init_sim"] = False
-    env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()
+    #env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()
     #if env_config["use_condor"]:
     #    env_config["kwargs"]["init_sim"] = False
 
     # if not env_config["use_condor"]:
-    env = gym.make(env_config["env_id"], **env_config["kwargs"])
-    env = StackFrame(env, stack_frame=env_config["stack_frame"])
+    #env = gym.make(env_config["env_id"], **env_config["kwargs"])
+    #env = StackFrame(env, stack_frame=env_config["stack_frame"])
     #env = train_envs if config["env_config"]["use_condor"] else train_envs
     
     print(">>>>>>>> Initializing the policy")

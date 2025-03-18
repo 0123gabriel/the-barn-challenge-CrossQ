@@ -27,7 +27,7 @@ class CrossQ_SAC(object):
         tau=5e-3,  # policy_arg
         alpha_lr=0.005,  # policy_arg
         n_step=4,  # policy_arg
-        target_update_freq=2,  # policy_arg
+        update_actor_freq=2,  # policy_arg
     ):
         self.actor = actor
         self.actor_optim = actor_optim
@@ -39,9 +39,9 @@ class CrossQ_SAC(object):
         self.tau = tau
         self.alpha_lr = alpha_lr
         self.n_step = n_step
-        self.target_update_freq = target_update_freq
+        self.target_update_freq = update_actor_freq
 
-        self.target_entropy = -torch.prod(action_range).to(self.device)
+        self.target_entropy = -torch.prod(torch.Tensor(action_range)).to(self.device)
         init_temperature = 1.0
 
         self.log_alpha = torch.tensor(
@@ -232,12 +232,12 @@ class CrossQCritic(nn.Module):
         # Q1 architecture
         self.state_preprocess1 = state_preprocess
         self.head1 = head
-        self.fc1 = nn.Linear(self.self_preprocess1.feature_dim, 1)
+        self.fc1 = nn.Linear(self.state_preprocess1.feature_dim, 1)
 
         # Q2 architecture
         self.state_preprocess2 = state_preprocess
         self.head2 = head
-        self.fc2 = nn.Linear(self.self_preprocess2.feature_dim, 1)
+        self.fc2 = nn.Linear(self.state_preprocess2.feature_dim, 1)
 
     def _initialize_weights(self):
         for layer in list(self.q1) + list(self.q2):

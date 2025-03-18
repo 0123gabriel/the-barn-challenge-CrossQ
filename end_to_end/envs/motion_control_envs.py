@@ -16,8 +16,8 @@ class MotionControlContinuous(JackalGazebo):
     def __init__(self, min_v=-1, max_v=2, min_w=-3.14, max_w=3.14, **kwargs):
         self.action_dim = 2
         super().__init__(**kwargs)
-        rospy.init_node('e2e', anonymous=True) #, log_level=rospy.FATAL)
-        rospy.set_param('/use_sim_time', True)
+        #rospy.init_node('e2e', anonymous=True) #, log_level=rospy.FATAL)
+        #rospy.set_param('/use_sim_time', True)
 
         self._cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         
@@ -53,13 +53,20 @@ class MotionControlContinuous(JackalGazebo):
         self.collision_count = 0
         # Reset robot in odom frame clear_costmap
         # self.gazebo_sim.reset()
+        print('Get time')
         self.start_time = self.current_time = rospy.get_time()
+        
+        print('Get pos')
         pos, psi = self._get_pos_psi()
         
         # self.gazebo_sim.unpause()
+        print('reset robot in odom')
         self.move_base.reset_robot_in_odom()
+        print('make plan')
         self.move_base.make_plan()
+        print('Clear ccostmap')
         self._clear_costmap()
+        print('get_observation')
         obs = self._get_observation(0, 0, np.array([0, 0]))
         # self.gazebo_sim.pause()
         
@@ -73,7 +80,9 @@ class MotionControlContinuous(JackalGazebo):
         laser_scan = (laser_scan - self.laser_clip/2.) / self.laser_clip * 2 # scale to (-1, 1)
         
         # goal_pos = self.transform_goal(self.world_frame_goal, pos, psi) / 5.0 - 1  # roughly (-1, 1) range
+        print('Before global path')
         goal_pos = self.move_base.get_global_path()[-1] / 5.0 - 1
+        print('after global path')
         
         bias = (self.action_space.high + self.action_space.low) / 2.
         scale = (self.action_space.high - self.action_space.low) / 2.
