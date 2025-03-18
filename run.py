@@ -78,9 +78,6 @@ if __name__ == "__main__":
         collided = gazebo_sim.get_hard_collision()
         time.sleep(1)
 
-
-
-
     ##########################################################################################
     ## 1. Launch your navigation stack
     ## (Customize this block to add your own navigation stack)
