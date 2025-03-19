@@ -5,7 +5,7 @@ import argparse
 import rospkg
 from os.path import join
 
-from gazebo_simulation import GazeboSimulation
+from envs.gazebo_simulation import GazeboSimulation
 
 INIT_POSITION = [-2, 3, 1.57]  # in world frame
 GOAL_POSITION = [0, 10]  # relative to the initial position
@@ -20,16 +20,17 @@ if __name__ == "__main__":
     parser.add_argument('--out', type=str, default="out.txt")
     args = parser.parse_args()
     
-    world_name = "barn/world_%d.world" %(81) # this might be problematic
-    rospack = rospkg.rospack()
+    world_name = "BARN/world_%d.world" %(81) # this might be problematic
+    rospack = rospkg.RosPack()
     base_path = rospack.get_path('jackal_helper')
 
     launch_file = join(base_path, 'launch', 'gazebo_launch.launch')
     world_name = join(base_path, "worlds", world_name)
 
+    print(launch_file)
+    print(world_name)
 
-
-    gazebo_process = subprocess.popen([
+    gazebo_process = subprocess.Popen([
     'roslaunch',
     launch_file,
     'world_name:=' + world_name,
@@ -57,6 +58,6 @@ if __name__ == "__main__":
     
     train_process = subprocess.Popen([
         'python',
-        'train.py',
+        'sac/train.py',
     ])
     
