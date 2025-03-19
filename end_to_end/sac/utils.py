@@ -291,7 +291,7 @@ class Env_Selector():
     def get_random_world(self):
         choice = np.random.choice(self.worlds)
         #print(choix)
-        return 'BARN/' + choice
+        return 'BARN/world_56.world' #'BARN/' + choice
 
     def get_random_env(self):
         env_config = self.config["env_config"]

@@ -281,7 +281,9 @@ class Actor(nn.Module):
         self.log_std_min, self.log_std_max = log_std_bounds
 
     def forward(self, state):
+        print('State', state.shape)
         s = self.state_preprocess(state) if self.state_preprocess else state
+        print('S', s.shape)
         mean = self.mean(self.head(s))
         log_std = self.log_std(self.head(s))
 

@@ -3,6 +3,7 @@ import time
 import rospy
 import argparse
 import rospkg
+import os
 from os.path import join
 
 from envs.gazebo_simulation import GazeboSimulation
@@ -10,7 +11,8 @@ from envs.gazebo_simulation import GazeboSimulation
 INIT_POSITION = [-2, 3, 1.57]  # in world frame
 GOAL_POSITION = [0, 10]  # relative to the initial position
 
-
+def compute_distance(p1, p2):
+    return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
 
 if __name__ == "__main__":
     
@@ -20,7 +22,11 @@ if __name__ == "__main__":
     parser.add_argument('--out', type=str, default="out.txt")
     args = parser.parse_args()
     
-    world_name = "BARN/world_%d.world" %(81) # this might be problematic
+    os.environ["JACKAL_LASER"] = "1"
+    os.environ["JACKAL_LASER_MODEL"] = "ust10"
+    os.environ["JACKAL_LASER_OFFSET"] = "-0.065 0 0.01"
+    
+    world_name = "BARN/world_56.world" # this might be problematic
     rospack = rospkg.RosPack()
     base_path = rospack.get_path('jackal_helper')
 
@@ -51,6 +57,14 @@ if __name__ == "__main__":
     pos = gazebo_sim.get_model_state().pose.position
     curr_coor = (pos.x, pos.y)
     collided = True
+    
+    # check whether the robot is reset, the collision is False
+    while compute_distance(init_coor, curr_coor) > 0.1 or collided:
+        gazebo_sim.reset() # Reset to the initial position
+        pos = gazebo_sim.get_model_state().pose.position
+        curr_coor = (pos.x, pos.y)
+        collided = gazebo_sim.get_hard_collision()
+        time.sleep(1)
     
     ##########################################################################################
     ## 1. Launch training

@@ -42,7 +42,7 @@ class LocalCollector(object):
             
         while n_steps_curr < n_steps:
             print(n_steps_curr)
-            act = policy.select_action(obs)
+            act = policy.select_action(obs, True)
             obs_new, rew, terminated, truncated, info = env.step(act)
             obs = obs_new
             ep_rew += rew

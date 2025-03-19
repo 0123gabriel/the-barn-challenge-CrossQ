@@ -129,7 +129,11 @@ class CNNEncoder(Encoder):
         self.net = nn.Sequential(*layers)
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)  # [batch, state_dim, seq_len]
+        print('X shape')
+        print(x.shape)
+        #x = x.permute(0, 2, 1)  # [batch, state_dim, seq_len]
+        #print('X shape after')
+        #print(x.shape)
         x = self.net(x)
         return x.squeeze(-1)
 
@@ -310,4 +314,5 @@ class MLP_CrossQ(nn.Module):
                 nn.init.zeros_(m.bias)
     
     def forward(self, x):
+        print('Forward shpae', x.shape)
         return self.mlp(x)
