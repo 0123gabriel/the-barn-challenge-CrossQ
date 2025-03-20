@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from utils import BatchRenorm
+from sac.utils import BatchRenorm
 
 
 class Encoder(torch.nn.Module):
