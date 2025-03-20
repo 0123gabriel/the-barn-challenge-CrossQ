@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from sac.utils import BatchRenorm
+from utils import BatchRenorm
 
 
 class Encoder(torch.nn.Module):
@@ -125,15 +125,13 @@ class CNNEncoder(Encoder):
                     nn.ReLU(),
                 ]
             )
+            
+        
 
         self.net = nn.Sequential(*layers)
 
     def forward(self, x):
-        print('X shape')
-        print(x.shape)
-        #x = x.permute(0, 2, 1)  # [batch, state_dim, seq_len]
-        #print('X shape after')
-        #print(x.shape)
+        x = x.permute(0, 2, 1)  # [batch, state_dim, seq_len]
         x = self.net(x)
         return x.squeeze(-1)
 
@@ -213,16 +211,16 @@ class TCNEncoder(Encoder):
         input_dim,
         num_layers=2,
         hidden_size=512,
-        history_length=10,
-        kernel_size=3,
-        dropout=0.2,
+        history_length=11,
+        kernel_size=11,
+        #dropout=0.2,
     ):
         super().__init__(
             input_dim,
             num_layers,
             hidden_size,
             history_length=history_length,
-            dropout=dropout,
+            #dropout=dropout,
         )
 
         layers = []
@@ -230,7 +228,7 @@ class TCNEncoder(Encoder):
 
         for i in range(num_layers):
             in_ch = input_dim if i == 0 else hidden_size
-            padding = (dilation * (kernel_size - 1)) // 2
+            padding = (dilation * (kernel_size - 1) + 1) // 2
             layers.extend(
                 [
                     nn.Conv1d(
@@ -241,17 +239,18 @@ class TCNEncoder(Encoder):
                         padding=padding,
                     ),
                     nn.ReLU(),
-                    nn.Dropout(dropout),
+                    #nn.Dropout(dropout),
                 ]
             )
             dilation *= 2 # to expand the receptive field
         
-        layers.append(nn.Conv1d(hidden_size, hidden_size, kernel_size=history_length))
+        padding = 0
+        layers.append(nn.Conv1d(hidden_size, input_dim, padding=padding, kernel_size=1)) # Bottleneck layer
         self.net = nn.Sequential(*layers)
         
     def forward(self, x):
-        x = x.permute(0, 2, 1)
-        x = self.net(x)
+        x1 = self.net(x)
+        x = x + x1
         return x.squeeze(-1)
 
 def get_activation(activation_choice: str) -> nn.Module:
@@ -314,5 +313,4 @@ class MLP_CrossQ(nn.Module):
                 nn.init.zeros_(m.bias)
     
     def forward(self, x):
-        print('Forward shpae', x.shape)
         return self.mlp(x)
