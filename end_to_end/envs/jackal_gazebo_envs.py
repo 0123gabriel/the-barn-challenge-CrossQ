@@ -10,6 +10,8 @@ from gym.spaces import Box
 
 from envs.gazebo_simulation import GazeboSimulation
 
+def compute_distance(p1, p2):
+    return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
 
 class JackalGazebo(gym.Env):
     def __init__(
@@ -33,6 +35,7 @@ class JackalGazebo(gym.Env):
         """
         super().__init__()
         # config
+        print('Maximum collision allowed: ',  max_collision, '=============================================================================================')
         self.gui = gui
         self.verbose = verbose
         
@@ -58,7 +61,12 @@ class JackalGazebo(gym.Env):
 
         # launch gazebo
         if init_sim:
-            print('HERE IS THE ERROR ============================================================================')
+            #print('HERE IS THE ERROR ============================================================================')
+            
+            os.environ["JACKAL_LASER"] = "1"
+            os.environ["JACKAL_LASER_MODEL"] = "ust10"
+            os.environ["JACKAL_LASER_OFFSET"] = "-0.065 0 0.01"
+            
             rospy.logwarn(">>>>>>>>>>>>>>>>>> Load world: %s <<<<<<<<<<<<<<<<<<" %(world_name))
             rospack = rospkg.RosPack()
             self.BASE_PATH = rospack.get_path('jackal_helper')
@@ -78,6 +86,35 @@ class JackalGazebo(gym.Env):
             rospy.set_param('/use_sim_time', True)
             
             self.gazebo_sim = GazeboSimulation(init_position=self.init_position)
+            self.gazebo_sim.reset()
+            
+            # init_coor = (init_position[0], init_position[1])
+            # goal_coor = (init_position[0] + goal_position[0], init_position[1] + goal_position[1])
+    
+            # pos = self.gazebo_sim.get_model_state().pose.position
+            # curr_coor = (pos.x, pos.y)
+            # collided = True
+    
+            # # check whether the robot is reset, the collision is False
+            # while compute_distance(init_coor, curr_coor) > 0.1 or collided:
+            #     print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+            #     self.gazebo_sim.reset() # Reset to the initial position
+            #     pos = self.gazebo_sim.get_model_state().pose.position
+            #     curr_coor = (pos.x, pos.y)
+            #     collided = self.gazebo_sim.get_hard_collision()
+            #     time.sleep(1)
+            
+            # curr_time = rospy.get_time()
+            # pos = self.gazebo_sim.get_model_state().pose.position
+            # curr_coor = (pos.x, pos.y)
+
+            # # check whether the robot started to move
+            # while compute_distance(init_coor, curr_coor) < 0.1:
+            #     curr_time = rospy.get_time()
+            #     pos = self.gazebo_sim.get_model_state().pose.position
+            #     curr_coor = (pos.x, pos.y)
+            #     time.sleep(0.01)
+            
 
         # place holders
         self.action_space = None

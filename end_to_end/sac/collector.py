@@ -23,7 +23,7 @@ class LocalCollector(object):
         self.global_steps = 0
     
     def collect(self, n_steps):
-        print('Collect first line')
+        #print('Collect first line')
         n_steps_curr = 0
         env = self.env
         policy = self.policy
@@ -34,14 +34,14 @@ class LocalCollector(object):
         
         if self.last_obs is not None:
             obs = self.last_obs
-            print('Last obs')
+            #print('Last obs')
         else:
-            print('Before reset')
+            #print('Before reset')
             obs = env.reset()
-            print('Env reset called')
+            #print('Env reset called')
             
         while n_steps_curr < n_steps:
-            print(n_steps_curr)
+            #print(n_steps_curr)
             act = policy.select_action(obs, True)
             obs_new, rew, terminated, truncated, info = env.step(act)
             obs = obs_new
@@ -54,21 +54,22 @@ class LocalCollector(object):
                 "_")[-1].split(".")[0])
             collision_reward = -int(info['collided'])
             
-            if self.policy.safe_rl:
-                self.buffer.add(obs, act,
-                                obs_new, rew,
-                                truncated, terminated, world, collision_reward)
-            else:
-                self.buffer.add(obs, act,
-                                obs_new, rew,
-                                truncated, terminated,
-                                world)
+            #if self.policy.safe_rl:
+            #    self.buffer.add(obs, act,
+            #                    obs_new, rew,
+            #                    truncated, terminated, world, collision_reward)
+            #else:
+            self.buffer.add(obs, act,
+                            obs_new, rew,
+                            truncated, terminated,
+                            world)
             
             if terminated or truncated:
                 obs = env.reset()
                 results.append(dict(
                     ep_rew=ep_rew,
-                    ep_len=ep_len
+                    ep_len=ep_len,
+                    world=world
                 ))
                 ep_rew = 0
                 ep_len = 0

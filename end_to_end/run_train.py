@@ -69,9 +69,40 @@ if __name__ == "__main__":
     ##########################################################################################
     ## 1. Launch training
     ##########################################################################################
-    
+    print('E2E launched')
     train_process = subprocess.Popen([
         'python',
         'sac/train.py',
     ])
     
+    #gazebo_process.wait()
+    
+    # ##########################################################################################
+    # ## 2. Start navigation
+    # ##########################################################################################
+    
+    # curr_time = rospy.get_time()
+    # pos = gazebo_sim.get_model_state().pose.position
+    # curr_coor = (pos.x, pos.y)
+
+    
+    # # check whether the robot started to move
+    # while compute_distance(init_coor, curr_coor) < 0.1:
+    #     curr_time = rospy.get_time()
+    #     pos = gazebo_sim.get_model_state().pose.position
+    #     curr_coor = (pos.x, pos.y)
+    #     time.sleep(0.01)
+    
+    # # start navigation, check position, time and collision
+    # start_time = curr_time
+    # start_time_cpu = time.time()
+    # collided = False
+    
+    # while compute_distance(goal_coor, curr_coor) > 1 and not collided and curr_time - start_time < 100:
+    #     curr_time = rospy.get_time()
+    #     pos = gazebo_sim.get_model_state().pose.position
+    #     curr_coor = (pos.x, pos.y)
+    #     print("Time: %.2f (s), x: %.2f (m), y: %.2f (m)" %(curr_time - start_time, *curr_coor), end="\r")
+    #     collided = gazebo_sim.get_hard_collision()
+    #     while rospy.get_time() - curr_time < 0.1:
+    #         time.sleep(0.01)

@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from utils import BatchRenorm
+from sac.utils import BatchRenorm
 
 
 class Encoder(torch.nn.Module):
@@ -222,12 +222,13 @@ class TCNEncoder(Encoder):
             history_length=history_length,
             #dropout=dropout,
         )
-
+        self.feature_dim = input_dim[0]
+        self.hidden_size = hidden_size
         layers = []
         dilation = 1
 
         for i in range(num_layers):
-            in_ch = input_dim if i == 0 else hidden_size
+            in_ch = input_dim[0] if i == 0 else hidden_size
             padding = (dilation * (kernel_size - 1) + 1) // 2
             layers.extend(
                 [
@@ -245,12 +246,14 @@ class TCNEncoder(Encoder):
             dilation *= 2 # to expand the receptive field
         
         padding = 0
-        layers.append(nn.Conv1d(hidden_size, input_dim, padding=padding, kernel_size=1)) # Bottleneck layer
+        layers.append(nn.Conv1d(hidden_size, input_dim[0], padding=padding, kernel_size=1)) # Bottleneck layer
         self.net = nn.Sequential(*layers)
-        
+        self.global_pool = nn.AdaptiveAvgPool1d(1)
     def forward(self, x):
         x1 = self.net(x)
         x = x + x1
+        x = x.permute(0, 2, 1) 
+        x = self.global_pool(x)
         return x.squeeze(-1)
 
 def get_activation(activation_choice: str) -> nn.Module:

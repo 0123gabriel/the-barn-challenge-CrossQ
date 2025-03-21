@@ -38,9 +38,9 @@ class StackFrame(gym.Wrapper):
         return np.stack(self.frames)
 
     def step(self, *args, **kwargs):
-        obs, rew, done, info = self.env.step(*args, **kwargs)
+        obs, rew, terminations, truncations, info = self.env.step(*args, **kwargs)
         self.frames.append(obs)
-        return np.stack(self.frames), rew, done, info
+        return np.stack(self.frames), rew, terminations, truncations, info
 
 
 class LongStackFrame(gym.Wrapper):

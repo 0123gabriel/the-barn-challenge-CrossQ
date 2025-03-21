@@ -39,6 +39,7 @@ class CrossQ_SAC(object):
         self.tau = tau
         self.alpha_lr = alpha_lr
         self.n_step = n_step
+        self.rewards_scale = 1.0
         self.target_update_freq = update_actor_freq
 
         self.target_entropy = -torch.prod(torch.Tensor(action_range)).to(self.device)
@@ -192,10 +193,10 @@ class CrossQ_SAC(object):
         return state, action, next_state, reward, termination, truncation, gammas
 
     def train(self, replay_buffer, batch_size=256):
-        state, action, next_state, reward, not_done, gammas = self.sample_transition(
+        state, action, next_state, reward, terminations, truncations, gammas = self.sample_transition(
             replay_buffer, batch_size
         )
-        loss_info = self.train_rl(state, action, next_state, reward, not_done, gammas)
+        loss_info = self.train_rl(state, action, next_state, reward, terminations, truncations, gammas)
         return loss_info
 
     def grad_norm(self, model):
@@ -232,12 +233,12 @@ class CrossQCritic(nn.Module):
         # Q1 architecture
         self.state_preprocess1 = state_preprocess
         self.head1 = head
-        self.fc1 = nn.Linear(self.state_preprocess1.feature_dim, 1)
+        self.fc1 = nn.Linear(self.state_preprocess1.hidden_size, 1)
 
         # Q2 architecture
         self.state_preprocess2 = state_preprocess
         self.head2 = head
-        self.fc2 = nn.Linear(self.state_preprocess2.feature_dim, 1)
+        self.fc2 = nn.Linear(self.state_preprocess2.hidden_size, 1)
 
     def _initialize_weights(self):
         for layer in list(self.q1) + list(self.q2):
@@ -248,12 +249,16 @@ class CrossQCritic(nn.Module):
     def forward(
         self, state: torch.Tensor, action: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        no_laser_data = state[:, :, -4:].reshape(state.shape[0], -1)
+        state = state[:, :, :-4]
         state1 = self.state_preprocess1(state) if self.state_preprocess1 else state
+        state1 = torch.cat([state1, no_laser_data], dim=1)
         sa1 = torch.cat([state1, action], dim=1)
         x1 = self.head1(sa1)
         q1 = self.fc1(x1)
 
         state2 = self.state_preprocess2(state) if self.state_preprocess2 else state
+        state2 = torch.cat([state2, no_laser_data], dim=1)
         sa2 = torch.cat([state2, action], dim=1)
         x2 = self.head2(sa2)
         q2 = self.fc2(x2)
@@ -267,6 +272,8 @@ class Actor(nn.Module):
         state_preprocess,
         head,
         action_dim,
+        action_space_high = 2,
+        action_space_low = -2,
         log_std_bounds: List[float] = [-20.0, 2.0],
     ):
         super(Actor, self).__init__()
@@ -279,11 +286,20 @@ class Actor(nn.Module):
         self.log_std = nn.Linear(self.head.feature_dim, action_dim)
 
         self.log_std_min, self.log_std_max = log_std_bounds
+        
+        self.register_buffer("action_scale", torch.tensor((action_space_high - action_space_low) / 2.0))
+        self.register_buffer("action_bias", torch.tensor((action_space_high + action_space_low) / 2.0))
 
     def forward(self, state):
-        print('State', state.shape)
+        #print('State', state.shape)
+        no_laser_data = state[:, :, -4:].reshape(state.shape[0], -1)
+        state = state[:, :, :-4]
         s = self.state_preprocess(state) if self.state_preprocess else state
-        print('S', s.shape)
+        #print('State: ', s.shape)
+        #print('No laser data: ', no_laser_data.shape)
+        s = torch.cat([s, no_laser_data], dim=1)
+        
+        #print('S', s.shape)
         mean = self.mean(self.head(s))
         log_std = self.log_std(self.head(s))
 

@@ -40,8 +40,12 @@ class GazeboSimulation():
         self._vel_sub = rospy.Subscriber("/jackal_velocity_controller/cmd_vel", Twist, self.vel_monitor)
         self.real_vel_sub = rospy.Subscriber("/jackal_velocity_controller/odom", Odometry, self.real_vel_monitor)
         self._local_goal_sub = rospy.Subscriber('/move_base/TrajectoryPlannerROS/local_plan', Path, self.current_goal_pos)
+        self._cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self.real_vel = 0
     
+    def pub_velocity(self, vel):
+        self._cmd_vel_pub.publish(vel)
+        
     def real_vel_monitor(self, msg):
         self.real_vel = msg.twist.twist.linear.x
     
@@ -112,7 +116,7 @@ class GazeboSimulation():
         data = None
         while data is None:
             try:
-                print('Waiting for message')
+                #print('Waiting for message')
                 data = rospy.wait_for_message('front/scan', LaserScan, timeout=5)
             except:
                 pass

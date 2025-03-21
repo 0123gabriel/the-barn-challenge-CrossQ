@@ -81,6 +81,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi() # Returns the position in the world frame
+        print('Position: ', pos, 'Orientation: ', psi, '\n')
         vel = self.gazebo_sim.get_velocity()
 
         if self.use_wandb:
@@ -101,14 +102,17 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         )
         
         success = np.linalg.norm(global_goal_pos) < 1.0
-        print('Norm to the goal: ', np.linalg.norm(global_goal_pos))
-        print('X pos: ', pos.x)
-        print('Y pos: ', pos.y)
+        #print('Norm to the goal: ', np.linalg.norm(global_goal_pos))
+        #print('X pos: ', pos.x)
+        #print('Y pos: ', pos.y)
 
         truncation = self.step_count >= self.max_step  # Timeout
 
         collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
+        if collided:
+            print('Collided ==================================================================================================')
         self.collision_count += int(collided)
+        #print(self.collision_count)
 
         termination = flip or success or self.collision_count >= self.max_collision
         #rew = 1
@@ -196,7 +200,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             bn, nn = self.gazebo_sim.get_bad_vel_num()
 
         # self.gazebo_sim.pause()
-        return obs, rew, termination or truncation, info
+        return obs, rew, termination, truncation, info
 
     # TODO: implement total reward functions
     def _time_penalty(self, max_step):
@@ -442,7 +446,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             min_distance = np.min(ranges[valid])
         else:
             min_distance = float('inf')  
-        print(min_distance)
+        #print(min_distance)
         return - 1/(min_distance + 1e-8) * alpha + 0.1
         
     def _local_goal_dir_reward(self):

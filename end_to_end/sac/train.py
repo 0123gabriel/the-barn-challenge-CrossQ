@@ -129,7 +129,7 @@ def initialize_policy(config, env, init_buffer=True):
         "history_length": config["env_config"]["stack_frame"],
     }
 
-    input_dim = training_config["hidden_layer_size"]
+    input_dim = 736 # Input dim is [laser dimensio + stack frames*size of local goal + stack frames*action dim]
     actor = Actor(
         state_preprocess=get_encoder(encoder_type, encoder_args),
         head=MLP_CrossQ(
@@ -138,6 +138,8 @@ def initialize_policy(config, env, init_buffer=True):
             training_config["encoder_hidden_layer_size"],
         ),
         action_dim=action_dim,
+        action_space_high=action_space_high, 
+        action_space_low=action_space_low
     ).to(device)
 
     print("Total number of parameters: %d" % sum(p.numel() for p in actor.parameters()))
@@ -220,7 +222,8 @@ def train(env_selector, env, policy, buffer, config):
         n_ep += len(epinfo)
         epinfo_buf.extend(epinfo)
         for d in epinfo:
-            world = d["world"].split("/")[-1]
+            print(d["world"])
+            world = d["world"] #.split("/")[-1]
             world_ep_buf[world].append(d)
 
         loss_infos = []
@@ -270,7 +273,7 @@ def train(env_selector, env, policy, buffer, config):
 if __name__ == "__main__":
     torch.set_num_threads(8)
     parser = argparse.ArgumentParser(description = 'Start condor training')
-    parser.add_argument('--config_path', dest='config_path', default="data/config.yaml")
+    parser.add_argument('--config_path', dest='config_path', default="../data/config.yaml")
     logging.getLogger().setLevel("INFO")
     args = parser.parse_args()
     CONFIG_PATH = args.config_path

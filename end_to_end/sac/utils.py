@@ -22,6 +22,7 @@ class ReplayBuffer(object):
         self.ptr = 0
         self.mean = 0
         self.reward_norm = reward_norm
+        self.size = 0
 
         self.safe_rl = safe_rl
 
@@ -291,11 +292,11 @@ class Env_Selector():
     def get_random_world(self):
         choice = np.random.choice(self.worlds)
         #print(choix)
-        return 'BARN/world_56.world' #'BARN/' + choice
+        return 'BARN/' + choice
 
     def get_random_env(self):
         env_config = self.config["env_config"]
-        env_config["kwargs"]["init_sim"] = False
+        env_config["kwargs"]["init_sim"] = True
         random_world = self.get_random_world()
         print(random_world)
         env_config["kwargs"]["world_name"] = random_world
