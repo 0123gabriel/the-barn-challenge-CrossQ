@@ -128,10 +128,10 @@ class CrossQ_SAC(object):
         q2_loss = F.mse_loss(q_values_2, q_target)
         total_q_loss = q1_loss + q2_loss
 
-        self.critic_net_optimizer.zero_grad()
+        self.critic_optim.zero_grad()
         total_q_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=100.0)
-        self.critic_net_optimizer.step()
+        self.critic_optim.step()
         # log actor loss, critic loss, entropy loss, alpha
 
         # Compute gradient and do optimizer step logging #! might remove this
@@ -145,7 +145,7 @@ class CrossQ_SAC(object):
         #     ** 0.5
         # )
 
-        if self.total_it % self.policy_update_freq == 0:
+        if self.total_it % self.target_update_freq == 0:
             # policy update
             next_actions, log_probs, _ = self.actor.get_action_alt(state)
 
@@ -157,12 +157,12 @@ class CrossQ_SAC(object):
             min_q = torch.minimum(q1, q2)
             policy_loss = (self.log_alpha.exp() * log_probs - min_q).mean()
 
-            self.actor_net_optimizer.zero_grad()
+            self.actor_optim.zero_grad()
             policy_loss.backward()
             # torch.nn.utils.clip_grad_norm_(
             # self.actor.parameters(), max_norm=1.0
             # )
-            self.actor_net_optimizer.step()
+            self.actor_optim.step()
 
             # temperature update
             entropy_loss = -(
