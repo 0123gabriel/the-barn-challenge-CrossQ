@@ -66,11 +66,15 @@ class LocalCollector(object):
             
             if terminated or truncated:
                 obs = env.reset()
-                results.append(dict(
+                info1 = dict(
                     ep_rew=ep_rew,
                     ep_len=ep_len,
                     world=world
-                ))
+                )
+                
+                joined_info = {**info1, **info}
+                
+                results.append(joined_info)
                 ep_rew = 0
                 ep_len = 0
                 self.global_episodes += 1

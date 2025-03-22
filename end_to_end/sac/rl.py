@@ -5,8 +5,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 import pickle
 import copy
-from utils import BatchRenorm, SquashedNormal
-from net import get_activation, MLP
+from sac.utils import BatchRenorm, SquashedNormal
+from sac.net import get_activation, MLP
 
 
 from os.path import join
@@ -119,9 +119,15 @@ class CrossQ_SAC(object):
         # print('Reward', reward.shape)
         # print('Target Q values', target_q_values.shape)
 
+        # print("===== DEBUG INFO ===========================================================================================================")
+        # print("Reward shape:", reward.shape)
+        # print("============================================================================================================================")
+        # print("Termination shape:", termination.shape)
+        # print("============================================================================================================================")
+
         q_target = (
-            reward.unsqueeze(-1) * self.rewards_scale
-            + self.gamma * (1 - termination.unsqueeze(-1)) * target_q_values
+            reward * self.rewards_scale
+            + self.gamma * (1 - termination) * target_q_values
         ).detach()
 
         q1_loss = F.mse_loss(q_values_1, q_target)
@@ -175,8 +181,8 @@ class CrossQ_SAC(object):
         return {
             "Actor_grad_norm": self.grad_norm(self.actor),
             "Critic_grad_norm": self.grad_norm(self.critic),
-            "Actor_loss": policy_loss,
-            "Critic_loss": total_q_loss,
+            "Actor_loss": policy_loss.cpu().detach().numpy(),
+            "Critic_loss": total_q_loss.cpu().detach().numpy(),
         }
 
     def sample_transition(self, replay_buffer, batch_size=256):

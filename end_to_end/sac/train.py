@@ -263,7 +263,7 @@ def train(env_selector, env, policy, buffer, config):
                 writer.add_scalar(k + "/Collision", np.mean([epinfo["collision"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
 
         env.close()
-        time.sleep(5)
+        time.sleep(30)
     
         # Change env for next iteration
         env = env_selector.get_random_env()

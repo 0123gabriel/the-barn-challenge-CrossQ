@@ -82,8 +82,10 @@ class JackalGazebo(gym.Env):
             time.sleep(10)  # sleep to wait until the gazebo being created
 
             # initialize the node for gym env
+            print('Before gym init ======================================================================================')
             rospy.init_node('gym', anonymous=True, log_level=rospy.FATAL)
             rospy.set_param('/use_sim_time', True)
+            print('After gym init ======================================================================================')
             
             self.gazebo_sim = GazeboSimulation(init_position=self.init_position)
             self.gazebo_sim.reset()
@@ -206,13 +208,53 @@ class JackalGazebo(gym.Env):
         
         return pos, psi
 
-    def close(self):
-        # These will make sure all the ros processes being killed
-        os.system("killall -9 rosmaster")
-        os.system("killall -9 gzclient")
-        os.system("killall -9 gzserver")
-        os.system("killall -9 roscore")
+    # def close(self):
+    #     # These will make sure all the ros processes being killed
+    #     os.system("killall -9 rosmaster")
+    #     os.system("killall -9 gzclient")
+    #     os.system("killall -9 gzserver")
+    #     os.system("killall -9 roscore")
+    #     print('ENV COSED ======================================================================================')
+        
+    # def close(self):
+    #     # Kill running ROS nodes first
+    #     #os.system("rosnode kill -a")  
+    #     #time.sleep(2)  # Allow time for nodes to shut down
 
+    #     # Kill Gazebo processes
+    #     os.system("killall -9 gzclient")
+    #     os.system("killall -9 gzserver")
+
+    #     # Kill ROS processes
+    #     os.system("killall -9 rosmaster")
+    #     os.system("killall -9 roscore")
+    #     print('ENV COSED ======================================================================================')
+    
+    def close(self):
+        print("Shutting down ROS and Gazebo...")
+
+        # Kill all ROS nodes properly
+        try:
+            ros_nodes = subprocess.check_output("rosnode list", shell=True).decode().strip().split("\n")
+            for node in ros_nodes:
+                os.system(f"rosnode kill {node}")
+        except subprocess.CalledProcessError:
+            print("No active ROS nodes found.")
+
+        time.sleep(2)  # Allow time for nodes to shut down
+
+        # Ensure all Gazebo processes are stopped
+        os.system("pkill -9 -f gzclient")
+        os.system("pkill -9 -f gzserver")
+
+        # Ensure all ROS processes are stopped
+        os.system("pkill -9 -f rosmaster")
+        os.system("pkill -9 -f roscore")
+        os.system("pkill -9 -f roslaunch")
+
+        time.sleep(2)  # Allow time for complete shutdown
+
+        print("ROS and Gazebo have been successfully closed.")
 
 class JackalGazeboLaser(JackalGazebo):
     def __init__(self, laser_clip=4, **kwargs):

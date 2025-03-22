@@ -81,7 +81,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi() # Returns the position in the world frame
-        print('Position: ', pos, 'Orientation: ', psi, '\n')
+        #print('Position: ', pos, 'Orientation: ', psi, '\n')
         vel = self.gazebo_sim.get_velocity()
 
         if self.use_wandb:
@@ -110,7 +110,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
         collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
         if collided:
-            print('Collided ==================================================================================================')
+            pass #print('Collided ==================================================================================================')
         self.collision_count += int(collided)
         #print(self.collision_count)
 
@@ -190,7 +190,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             collision=self.collision_count,
             collided=collided,
             goal_position=global_goal_pos,
-            time=self.current_time - self.start_time,
+            ep_time=self.current_time - self.start_time,
             success=success,
             world=self.world_name,
             reward_function=self.reward_scheme_name,
