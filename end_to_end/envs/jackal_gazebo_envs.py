@@ -7,6 +7,7 @@ import os
 from os.path import join
 import subprocess
 from gym.spaces import Box
+import signal
 
 from envs.gazebo_simulation import GazeboSimulation
 
@@ -77,8 +78,8 @@ class JackalGazebo(gym.Env):
                                                     launch_file,
                                                     'world_name:=' + world_name,
                                                     'gui:=' + ("true" if gui else "false"),
-                                                    'verbose:=' + ("true" if verbose else "false"),
-                                                    ])
+                                                    'verbose:=' + ("true" if verbose else "false"),                                                 
+                                                    ], preexec_fn=os.setsid)
             time.sleep(10)  # sleep to wait until the gazebo being created
 
             # initialize the node for gym env
@@ -231,13 +232,25 @@ class JackalGazebo(gym.Env):
     #     print('ENV COSED ======================================================================================')
     
     def close(self):
-        print("Shutting down ROS and Gazebo...")
+        print(">>>>>>>>>>>>>>>>>>>>>>> Shutting down ROS and Gazebo <<<<<<<<<<<<<<<<<<<<<<<<<<<")
 
         # Kill all ROS nodes properly
         try:
-            ros_nodes = subprocess.check_output("rosnode list", shell=True).decode().strip().split("\n")
-            for node in ros_nodes:
-                os.system(f"rosnode kill {node}")
+            rospy.signal_shutdown("Closing Environment (shutting down nodes).")
+            subprocess.call(["rosnode", "kill", "-a"])
+            time.sleep(2)  # Allow time for nodes to shut down
+            
+            if self.gazebo_process:
+                os.killpg(os.getpgid(self.gazebo_process.pid), signal.SIGTERM)
+                self.gazebo_process = None
+                time.sleep(3)  # Allow for full cleanup
+        
+        except Exception as e:
+            rospy.logerr(f"Error shutting down: {e}")    
+            
+            # ros_nodes = subprocess.check_output("rosnode list", shell=True).decode().strip().split("\n")
+            # for node in ros_nodes:
+            #     os.system(f"rosnode kill {node}")
         except subprocess.CalledProcessError:
             print("No active ROS nodes found.")
 
