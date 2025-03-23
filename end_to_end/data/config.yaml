@@ -26,7 +26,7 @@ env_config:
     max_w: 3.14
 
 training_config:
-  algorithm: "TD3"
+  algorithm: "CrossQ"
   network: "mlp"
   encoder: "tcn"  # span "mlp", "cnn", "rnn", "transformer"
   buffer_size: 200000
@@ -39,7 +39,7 @@ training_config:
   exploration_noise_start: 0.1
   exploration_noise_end: 0.0999
   pre_collect: 100
-  log_intervals: 2
+  log_intervals: 20000
   validation: False
   val_interval: 1000000
 

@@ -1,4 +1,6 @@
 import os
+import rospy
+import subprocess
 import argparse
 import logging
 import yaml
@@ -16,6 +18,7 @@ import uuid
 import shutil
 import time
 import collections
+import wandb
 from pprint import pformat
 
 from envs.wrappers import StackFrame
@@ -29,6 +32,16 @@ from torch.utils.tensorboard import SummaryWriter
 
 import envs.registration # register the env to run train.py
 
+#TODO: Set this information from the config file
+log_dir = 'trainings'
+use_wandb = False 
+
+def start_roscore():
+    """Start roscore in a subprocess."""
+    rospy.loginfo("Starting roscore...")
+    process = subprocess.Popen(["roscore"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(3)  # Give some time for roscore to start
+    return process
 
 def initialize_config(config_path, save_path):
     # Load the config files
@@ -246,6 +259,10 @@ def train(env_selector, env, policy, buffer, config):
             "n_episode": n_ep,
             "Steps": n_steps,
         }
+        
+        if use_wandb:
+            wandb.log(log, step=n_steps)
+            
         log.update(loss_info)
         print(pformat(log))
 
@@ -263,14 +280,23 @@ def train(env_selector, env, policy, buffer, config):
                 writer.add_scalar(k + "/Collision", np.mean([epinfo["collision"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
 
         env.close()
-        time.sleep(30)
+        time.sleep(1)
     
         # Change env for next iteration
         env = env_selector.get_random_env()
         collector.set_env(env)
-    
+        
 
 if __name__ == "__main__":
+    
+    roscore_process = start_roscore()
+    # initialize the node for gym env
+    print('Before gym init ======================================================================================')
+    if not rospy.core.is_initialized():
+        rospy.init_node('gym', anonymous=False, log_level=rospy.FATAL)
+        rospy.set_param('/use_sim_time', True)
+    print('After gym init ======================================================================================')
+    
     torch.set_num_threads(8)
     parser = argparse.ArgumentParser(description = 'Start condor training')
     parser.add_argument('--config_path', dest='config_path', default="../data/config.yaml")
@@ -280,6 +306,40 @@ if __name__ == "__main__":
     SAVE_PATH = "logging/"
     print(">>>>>>>> Loading the configuration from %s" % CONFIG_PATH)
     config = initialize_config(CONFIG_PATH, SAVE_PATH)
+
+    if use_wandb:  # TODO: this should be in the main file
+            wandb.init(
+                project="BARN_CrossQ",
+                config={
+                    "algorithm": config["training_config"]["algorithm"],
+                    "network": config["training_config"]["network"],
+                    "encoder": config["training_config"]["encoder"],
+                    "buffer_size": config["training_config"]["buffer_size"],
+                    "actor_lr": config["training_config"]["actor_lr"],
+                    "critic_lr": config["training_config"]["critic_lr"],
+                    "num_layers": config["training_config"]["num_layers"],
+                    "hidden_layer_size": config["training_config"]["hidden_layer_size"],
+                    "encoder_num_layers": config["training_config"]["encoder_num_layers"],
+                    "encoder_hidden_layer_size": config["training_config"]["encoder_hidden_layer_size"],
+                    "exploration_noise_start": config["training_config"]["exploration_noise_start"],
+                    "exploration_noise_end": config["training_config"]["exploration_noise_end"],
+                    "pre_collect": config["training_config"]["pre_collect"],
+                    "log_intervals": config["training_config"]["log_intervals"],
+                    "validation": config["training_config"]["validation"],
+                    "val_interval": config["training_config"]["val_interval"],
+                    "dyna_style": config["training_config"]["dyna_style"],
+                    "n_simulated_update": config["training_config"]["n_simulated_update"],
+                    "model_lr": config["training_config"]["model_lr"],
+                    "MPC": config["training_config"]["MPC"],
+                    "horizon": config["training_config"]["horizon"],
+                    "num_particle": config["training_config"]["num_particle"],
+                    "safe_rl": config["training_config"]["safe_rl"],
+                    "safe_mode": config["training_config"]["safe_mode"],
+                    "safe_lagr": config["training_config"]["safe_lagr"],
+                    "policy_args": config["training_config"]["policy_args"],
+                    "training_args": config["training_config"]["training_args"],
+                },
+            )
 
     seed(config)
     print(">>>>>>>> Creating the environments")

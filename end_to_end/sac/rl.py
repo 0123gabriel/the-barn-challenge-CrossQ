@@ -217,16 +217,16 @@ class CrossQ_SAC(object):
         self.actor.to("cpu")
         with open(join(dir, filename + "_actor"), "wb") as f:
             pickle.dump(self.actor.state_dict(), f)
-        with open(join(dir, filename + "_noise"), "wb") as f:
-            pickle.dump(self.exploration_noise, f)
+        #with open(join(dir, filename + "_noise"), "wb") as f:
+        #    pickle.dump(self.exploration_noise, f)
         self.actor.to(self.device)
 
     def load(self, dir, filename):
         with open(join(dir, filename + "_actor"), "rb") as f:
             self.actor.load_state_dict(pickle.load(f))
             self.actor_target = copy.deepcopy(self.actor)
-        with open(join(dir, filename + "_noise"), "rb") as f:
-            self.exploration_noise = pickle.load(f)
+        #with open(join(dir, filename + "_noise"), "rb") as f:
+        #    self.exploration_noise = pickle.load(f)
 
 
 class CrossQCritic(nn.Module):

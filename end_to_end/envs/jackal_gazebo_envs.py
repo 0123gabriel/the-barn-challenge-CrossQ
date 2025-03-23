@@ -82,11 +82,13 @@ class JackalGazebo(gym.Env):
                                                     ], preexec_fn=os.setsid)
             time.sleep(10)  # sleep to wait until the gazebo being created
 
-            # initialize the node for gym env
-            print('Before gym init ======================================================================================')
-            rospy.init_node('gym', anonymous=True, log_level=rospy.FATAL)
-            rospy.set_param('/use_sim_time', True)
-            print('After gym init ======================================================================================')
+            # # initialize the node for gym env
+            # print('Before gym init ======================================================================================')
+            # #if not rospy.core.is_initialized():
+            # rospy.init_node('gym', anonymous=True, log_level=rospy.FATAL)
+            # #rospy.spin()
+            # rospy.set_param('/use_sim_time', True)
+            # print('After gym init ======================================================================================')
             
             self.gazebo_sim = GazeboSimulation(init_position=self.init_position)
             self.gazebo_sim.reset()
@@ -233,39 +235,51 @@ class JackalGazebo(gym.Env):
     
     def close(self):
         print(">>>>>>>>>>>>>>>>>>>>>>> Shutting down ROS and Gazebo <<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        self.gazebo_process.terminate()
+        self.gazebo_process.wait()
+        #rospy.signal_shutdown("Closing Environment (shutting down nodes).")
 
-        # Kill all ROS nodes properly
-        try:
-            rospy.signal_shutdown("Closing Environment (shutting down nodes).")
-            subprocess.call(["rosnode", "kill", "-a"])
-            time.sleep(2)  # Allow time for nodes to shut down
+        # # Kill all ROS nodes properly
+        # try:
+        #     rospy.signal_shutdown("Closing Environment (shutting down nodes).")
             
-            if self.gazebo_process:
-                os.killpg(os.getpgid(self.gazebo_process.pid), signal.SIGTERM)
-                self.gazebo_process = None
-                time.sleep(3)  # Allow for full cleanup
+        #     #subprocess.call(["rosnode", "kill", "-a"])
+            
+        #     ros_nodes = subprocess.check_output("rosnode list", shell=True).decode().strip().split("\n")
+
+        #     # Kill only nodes that start with "gym"
+        #     for node in ros_nodes:
+        #         if node.startswith("gym"):
+        #             os.system(f"rosnode kill {node}")
+            
+        #     time.sleep(2)  # Allow time for nodes to shut down
+            
+        #     #if self.gazebo_process:
+        #     #    os.killpg(os.getpgid(self.gazebo_process.pid), signal.SIGTERM)
+        #     #    self.gazebo_process = None
+        #     #    time.sleep(3)  # Allow for full cleanup
         
-        except Exception as e:
-            rospy.logerr(f"Error shutting down: {e}")    
+        # except Exception as e:
+        #     rospy.logerr(f"Error shutting down: {e}")    
             
-            # ros_nodes = subprocess.check_output("rosnode list", shell=True).decode().strip().split("\n")
-            # for node in ros_nodes:
-            #     os.system(f"rosnode kill {node}")
-        except subprocess.CalledProcessError:
-            print("No active ROS nodes found.")
+        #     # ros_nodes = subprocess.check_output("rosnode list", shell=True).decode().strip().split("\n")
+        #     # for node in ros_nodes:
+        #     #     os.system(f"rosnode kill {node}")
+        # except subprocess.CalledProcessError:
+        #     print("No active ROS nodes found.")
 
-        time.sleep(2)  # Allow time for nodes to shut down
+        # time.sleep(2)  # Allow time for nodes to shut down
 
         # Ensure all Gazebo processes are stopped
-        os.system("pkill -9 -f gzclient")
-        os.system("pkill -9 -f gzserver")
+        # os.system("pkill -9 -f gzclient")
+        # os.system("pkill -9 -f gzserver")
 
         # Ensure all ROS processes are stopped
-        os.system("pkill -9 -f rosmaster")
-        os.system("pkill -9 -f roscore")
-        os.system("pkill -9 -f roslaunch")
+        #os.system("pkill -9 -f rosmaster")
+        #os.system("pkill -9 -f roscore")
+        #os.system("pkill -9 -f roslaunch")
 
-        time.sleep(2)  # Allow time for complete shutdown
+        # time.sleep(2)  # Allow time for complete shutdown
 
         print("ROS and Gazebo have been successfully closed.")
 
