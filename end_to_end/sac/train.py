@@ -283,7 +283,10 @@ def train(env_selector, env, policy, buffer, config):
         time.sleep(1)
     
         # Change env for next iteration
-        env = env_selector.get_random_env()
+        env, info = env_selector.get_random_env()
+        if use_wandb:
+            wandb.log({"reward_scheme": info["reward_scheme"], 
+                    "world": info["world"]}, step=n_steps)
         collector.set_env(env)
         
 
@@ -344,8 +347,8 @@ if __name__ == "__main__":
     seed(config)
     print(">>>>>>>> Creating the environments")
     worlds_directory = "/root/e2e_crossq/src/the-barn-challenge-CrossQ/jackal_helper/worlds/BARN" # This should be automated
-    env_selector = Env_Selector(config, worlds_directory)
-    env = env_selector.get_random_env()
+    env_selector= Env_Selector(config, worlds_directory)
+    env, info = env_selector.get_random_env()
     #env_config = config["env_config"]
     # env_config["kwargs"]["init_sim"] = False
     #env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()

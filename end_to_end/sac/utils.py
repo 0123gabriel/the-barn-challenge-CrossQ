@@ -298,9 +298,17 @@ class Env_Selector():
         env_config = self.config["env_config"]
         env_config["kwargs"]["init_sim"] = True
         env_config["kwargs"]["world_name"] = self.get_random_world()
-        #if env_config["use_condor"]:
+        # Randomly choose a reward type from the available options
+        reward_types = ["smooth", "lidar", "simple", "mixed"]
+        env_config["kwargs"]["reward_function"] = np.random.choice(reward_types)
+        
+        info = {
+            "world": env_config["kwargs"]["world_name"],
+            "reward_scheme": env_config["kwargs"]["reward_function"],
+        }
+        # if env_config["use_condor"]:
         #    env_config["kwargs"]["init_sim"] = False
-    
+        
         # if not env_config["use_condor"]:
         env = gym.make(env_config["env_id"], **env_config["kwargs"])
         env = StackFrame(env, stack_frame=env_config["stack_frame"])
@@ -309,4 +317,4 @@ class Env_Selector():
             # So here we use a fake env with obs_space and act_space information
         #    print("    >>>> Using actors on Condor")
         #    env = InfoEnv(config)
-        return env
+        return env, info
