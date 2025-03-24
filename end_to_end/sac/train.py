@@ -34,7 +34,7 @@ import envs.registration # register the env to run train.py
 
 #TODO: Set this information from the config file
 log_dir = 'trainings'
-use_wandb = False 
+use_wandb = True 
 
 def start_roscore():
     """Start roscore in a subprocess."""

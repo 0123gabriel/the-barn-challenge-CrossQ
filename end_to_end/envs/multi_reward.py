@@ -438,7 +438,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     def _time_penalty(self, step_count, max_step):
         return -0.01
 
-    def _obs_dist_reward(self, alpha=0.2):
+    def _obs_dist_reward(self, alpha=0.1):
         laser_data = self.gazebo_sim.get_laser_scan()
         ranges = np.array(laser_data.ranges)
         valid = (ranges > 0) & (ranges != np.inf)
