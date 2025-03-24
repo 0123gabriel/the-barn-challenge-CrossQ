@@ -26,7 +26,7 @@ from sac.collector import LocalCollector
 
 from rl import Actor, CrossQCritic, CrossQ_SAC
 from net import MLP_CrossQ
-from utils import Env_Selector, ReplayBuffer
+from utils import Env_Selector, Simple_Curriculum, ReplayBuffer
 from net import MLP_CrossQ, RNNEncoder, CNNEncoder, TCNEncoder, DilatedCNNEncoder
 from torch.utils.tensorboard import SummaryWriter
 
@@ -283,7 +283,7 @@ def train(env_selector, env, policy, buffer, config):
         time.sleep(1)
     
         # Change env for next iteration
-        env, info = env_selector.get_random_env()
+        env, info = env_selector.get_env(succes_rate=log["Success"])
         if use_wandb:
             wandb.log({"reward_scheme": info["reward_scheme"], 
                     "world": info["world"]}, step=n_steps)
@@ -348,7 +348,13 @@ if __name__ == "__main__":
     print(">>>>>>>> Creating the environments")
     worlds_directory = "/root/e2e_crossq/src/the-barn-challenge-CrossQ/jackal_helper/worlds/BARN" # This should be automated
     env_selector= Env_Selector(config, worlds_directory)
-    env, info = env_selector.get_random_env()
+    
+    if config["env_selector"] == "random":
+        env_selector = Env_Selector(config, worlds_directory)
+    if config["env_selector"] == "simple_curriculum":
+        env_selector = Simple_Curriculum(config, worlds_directory)
+    
+    env, info = env_selector.get_env()
     #env_config = config["env_config"]
     # env_config["kwargs"]["init_sim"] = False
     #env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()

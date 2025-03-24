@@ -6,6 +6,9 @@ import torch.nn as nn
 import gym
 from envs.wrappers import StackFrame
 from torch.distributions import Normal, TransformedDistribution, TanhTransform
+import pandas as pd
+import random
+import os
 
 
 class ReplayBuffer(object):
@@ -94,7 +97,7 @@ class ReplayBuffer(object):
                 torch.FloatTensor(self.state[ind]).to(self.device),
                 torch.FloatTensor(self.action[ind]).to(self.device),
                 torch.FloatTensor(self.next_state[ind]).to(self.device),
-                torch.FloatTensor(self.reward[ind]).to(self.device),              
+                torch.FloatTensor(self.reward[ind]).to(self.device),
                 torch.FloatTensor(self.terminated[ind]).to(self.device),
                 torch.FloatTensor(self.truncated[ind]).to(self.device),
                 torch.FloatTensor(self.task[ind]).to(self.device),
@@ -149,10 +152,10 @@ class ReplayBuffer(object):
             )
         if self.safe_rl:
             return next_state, reward, gammas, terminated, truncated, collision_reward
-        
+
         else:
             return next_state, reward, gammas, terminated, truncated
-        
+
 
 class StableTanhTransform(TanhTransform):
     def __init__(self, cache_size=1):
@@ -171,7 +174,7 @@ class StableTanhTransform(TanhTransform):
 
 class SquashedNormal(TransformedDistribution):
     def __init__(self, loc: torch.Tensor, std: torch.Tensor):
-        self.loc = loc #can't use mean because of the property
+        self.loc = loc  # can't use mean because of the property
         self.std = std
         base_distribution = Normal(loc, std)
         super().__init__(base_distribution, StableTanhTransform(), validate_args=False)
@@ -272,9 +275,9 @@ class BatchRenorm(nn.Module):
             x = (x - self.running_mean.view(view_shape)) / running_std.view(view_shape)
 
         return x * self.weight.view(view_shape) + self.bias.view(view_shape)
-    
-    
-class Env_Selector():
+
+
+class Env_Selector:
     def __init__(self, config, worlds_directory):
         self.config = config
         self.worlds = self.load_worlds_files(worlds_directory)
@@ -282,17 +285,17 @@ class Env_Selector():
     def load_worlds_files(self, worlds_dir):
         # TODO FOR CURRICULUM LEARNING: load the selected worlds by CL using a preloaded csv file
         # Get all .world files in the directory
-        #world_files = glob.glob(os.path.join(worlds_dir, "world_*.world"))
-        #print(world_files)
-        
+        # world_files = glob.glob(os.path.join(worlds_dir, "world_*.world"))
+        # print(world_files)
+
         world_files = os.listdir(worlds_dir)
-        #print(world_files)
+        # print(world_files)
         return world_files
-    
+
     def get_random_world(self):
         choice = np.random.choice(self.worlds)
-        #print(choix)
-        return 'BARN/' + choice
+        # print(choix)
+        return "BARN/" + choice
 
     def get_random_env(self):
         env_config = self.config["env_config"]
@@ -301,20 +304,115 @@ class Env_Selector():
         # Randomly choose a reward type from the available options
         reward_types = ["smooth", "lidar", "simple", "mixed"]
         env_config["kwargs"]["reward_function"] = np.random.choice(reward_types)
-        
+
         info = {
             "world": env_config["kwargs"]["world_name"],
             "reward_scheme": env_config["kwargs"]["reward_function"],
         }
         # if env_config["use_condor"]:
         #    env_config["kwargs"]["init_sim"] = False
-        
+
         # if not env_config["use_condor"]:
         env = gym.make(env_config["env_id"], **env_config["kwargs"])
         env = StackFrame(env, stack_frame=env_config["stack_frame"])
         # else:
-            # If use condor, we want to avoid initializing env instance from the central learner
-            # So here we use a fake env with obs_space and act_space information
+        # If use condor, we want to avoid initializing env instance from the central learner
+        # So here we use a fake env with obs_space and act_space information
         #    print("    >>>> Using actors on Condor")
         #    env = InfoEnv(config)
+        return env, info
+    
+    def get_env(self, success_rate=0.0):
+        return self.get_random_env()
+
+
+class Simple_Curriculum:
+    def __init__(self, config, worlds_directory):
+        self.config = config
+        self.worlds_dir = worlds_directory
+        self.stage = 0
+        self.current_sucess_rate = 0.0
+        self.smoothing_factor = 0.3
+        
+
+    def get_random_world(self):
+        choice = np.random.choice(self.worlds)
+        # print(choix)
+        return "BARN/" + choice
+
+    def get_env_with_params(self, fill_pct_range, distance_range):
+        # Look through the csv file in the collumns ("fill_pct", "distance") to get a random index that matches
+        # Load the CSV file with world metadata
+        csv_path = os.path.join(self.worlds_dir, "worlds_metadata.csv")
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"Metadata CSV file not found at {csv_path}")
+
+        df = pd.read_csv(csv_path)
+
+        # Filter worlds that match the criteria
+        matching_worlds = df[
+            (df["fill_pct"] >= fill_pct_range[0])
+            & (df["fill_pct"] <= fill_pct_range[1])
+            & (df["distance"] >= distance_range[0])
+            & (df["distance"] <= distance_range[1])
+        ]
+
+        if matching_worlds.empty:
+            # Fallback if no worlds match the criteria
+            print(
+                "============== No worlds match the specified ranges. =============="
+            )
+            raise NotImplementedError
+        else:
+            # Select a random world from the matching ones
+            world_id = random.choice(matching_worlds["world_id"].tolist())
+            world_name = os.path.join(self.worlds_dir, f"world_{world_id}.world")
+        return world_name
+    
+    def get_env(self, success_rate = 0.0):
+        self.current_sucess_rate = self.smoothing_factor * success_rate + (1 - self.smoothing_factor) * self.current_sucess_rate
+        
+        env_config = self.config["env_config"]
+        env_config["kwargs"]["init_sim"] = True
+        
+        # Define curriculum stages with their corresponding parameters
+        curriculum_stages = [
+            {"fill_pct_range": [0.0, 0.10], "distance_range": [10, 15]},  # Stage 0
+            {"fill_pct_range": [0.10, 0.20], "distance_range": [10, 15]}, # Stage 1
+            {"fill_pct_range": [0.0, 0.10], "distance_range": [15, 25]},  # Stage 2
+            {"fill_pct_range": [0.1, 0.2], "distance_range": [15, 25]},   # Stage 3
+            {"fill_pct_range": [0, 0.2], "distance_range": [25, 40]},     # Stage 4
+            {"fill_pct_range": [0, 0.3], "distance_range": [10, 40]},     # Stage 5
+        ]
+        
+        # Final stage parameters for all stages >= 6
+        final_stage_params = {"fill_pct_range": [0, 0.35], "distance_range": [25, 40]}
+        
+        # Increment stage if success rate is high enough
+        if self.current_sucess_rate > 0.6:
+            self.stage += 1
+            
+        # Get parameters for the current stage
+        if self.stage < len(curriculum_stages):
+            params = curriculum_stages[self.stage]
+        else:
+            params = final_stage_params
+            
+        world_name = self.get_env_with_params(
+            fill_pct_range=params["fill_pct_range"], 
+            distance_range=params["distance_range"]
+        )
+        
+        env_config["kwargs"]["world_name"] = world_name
+        reward_types = ["smooth", "lidar", "simple", "mixed"]
+        env_config["kwargs"]["reward_function"] = np.random.choice(reward_types)
+
+        info = {
+            "world": env_config["kwargs"]["world_name"],
+            "reward_scheme": env_config["kwargs"]["reward_function"],
+        }
+
+        env = gym.make(env_config["env_id"], **env_config["kwargs"])
+        env = StackFrame(env, stack_frame=env_config["stack_frame"])
+
         return env, info
