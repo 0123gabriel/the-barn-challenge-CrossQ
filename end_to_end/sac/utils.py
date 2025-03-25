@@ -365,7 +365,7 @@ class Simple_Curriculum:
             raise NotImplementedError
         else:
             # Select a random world from the matching ones
-            world_id = random.choice(matching_worlds["world_id"].tolist())
+            world_id = random.choice(matching_worlds["ID"].tolist())
             world_name = os.path.join(self.worlds_dir, f"world_{world_id}.world")
         return world_name
     
@@ -377,16 +377,16 @@ class Simple_Curriculum:
         
         # Define curriculum stages with their corresponding parameters
         curriculum_stages = [
-            {"fill_pct_range": [0.0, 0.10], "distance_range": [10, 15]},  # Stage 0
-            {"fill_pct_range": [0.10, 0.20], "distance_range": [10, 15]}, # Stage 1
-            {"fill_pct_range": [0.0, 0.10], "distance_range": [15, 25]},  # Stage 2
-            {"fill_pct_range": [0.1, 0.2], "distance_range": [15, 25]},   # Stage 3
-            {"fill_pct_range": [0, 0.2], "distance_range": [25, 40]},     # Stage 4
-            {"fill_pct_range": [0, 0.3], "distance_range": [10, 40]},     # Stage 5
+            {"fill_pct_range": [0.0, 0.10], "distance_range": [10, 15], "init_position": [-2, 5, 1.57], "goal_position": [0, 2.5, 0]},  # Stage 0
+            {"fill_pct_range": [0.10, 0.20], "distance_range": [10, 15], "init_position": [-2, 4, 1.57], "goal_position": [0, 5.5, 0]}, # Stage 1
+            {"fill_pct_range": [0.0, 0.10], "distance_range": [15, 25], "init_position": [-2, 4, 1.57], "goal_position": [0, 7, 0]},  # Stage 2
+            {"fill_pct_range": [0.1, 0.2], "distance_range": [15, 25], "init_position": [-2, 4, 1.57], "goal_position": [0, 7, 0]},   # Stage 3
+            {"fill_pct_range": [0, 0.2], "distance_range": [25, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]},     # Stage 4
+            {"fill_pct_range": [0, 0.3], "distance_range": [10, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]},     # Stage 5
         ]
         
         # Final stage parameters for all stages >= 6
-        final_stage_params = {"fill_pct_range": [0, 0.35], "distance_range": [25, 40]}
+        final_stage_params = {"fill_pct_range": [0, 0.35], "distance_range": [25, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]}
         
         # Increment stage if success rate is high enough
         if self.current_sucess_rate > 0.6:
@@ -406,10 +406,14 @@ class Simple_Curriculum:
         env_config["kwargs"]["world_name"] = world_name
         reward_types = ["smooth", "lidar", "simple", "mixed"]
         env_config["kwargs"]["reward_function"] = np.random.choice(reward_types)
+        env_config["kwargs"]["init_position"] = params["init_position"]
+        env_config["kwargs"]["goal_position"] = params["goal_position"]
 
         info = {
             "world": env_config["kwargs"]["world_name"],
             "reward_scheme": env_config["kwargs"]["reward_function"],
+            "stage": self.stage,
+            "success_rate": self.current_sucess_rate,
         }
 
         env = gym.make(env_config["env_id"], **env_config["kwargs"])

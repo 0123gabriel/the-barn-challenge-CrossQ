@@ -25,6 +25,8 @@ env_config:
     min_w: -3.14
     max_w: 3.14
 
+env_selector: "simple_curriculum" # span "random", "simple"
+
 training_config:
   algorithm: "CrossQ"
   network: "mlp"
@@ -38,7 +40,7 @@ training_config:
   encoder_hidden_layer_size: 512
   exploration_noise_start: 0.1
   exploration_noise_end: 0.0999
-  pre_collect: 100
+  pre_collect: 1000
   log_intervals: 20000
   validation: False
   val_interval: 1000000
@@ -65,7 +67,7 @@ training_config:
 
   training_args:
     max_step: 4000000
-    collect_per_step: 100
+    collect_per_step: 1000
     update_per_step: 10
     batch_size: 128
 

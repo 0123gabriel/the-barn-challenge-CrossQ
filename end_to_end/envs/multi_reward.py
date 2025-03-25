@@ -8,7 +8,7 @@ from geometry_msgs.msg import Point
 log_dir = "logs" # TODO set this on the config file
 
 class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
-    def __init__(self, reward_function = 'mixed', use_wandb=False, **kwargs):
+    def __init__(self, reward_function = 'mixed', use_wandb=True, **kwargs):
         super().__init__(**kwargs)
 
         self.use_wandb = use_wandb
@@ -46,14 +46,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self.prev_psi = 1.57
         self.prev_vel = 0
         
-        if use_wandb:  # TODO: this should be in the main file
-            wandb.init(
-                project="gazebo_rewards",  # set this from config file
-                name=self.reward_scheme_name,
-                config={
-                    "reward_scheme": self.reward_scheme_name,
-                },
-            )
+        # if use_wandb:  # TODO: this should be in the main file
+        #     wandb.log(
+        #         {
+        #             "reward_scheme": self.reward_scheme_name,
+        #         }
+        #     )
 
     def step(self, action):
         # TODO: add to infos the reward function used, and the enviroment parameters
@@ -447,7 +445,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         else:
             min_distance = float('inf')  
         #print(min_distance)
-        return - 1/(min_distance + 1e-8) * alpha + 0.1
+        return - 1/(min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
         
     def _local_goal_dir_reward(self):
         local_g_x = self.gazebo_sim.local_goal[0]

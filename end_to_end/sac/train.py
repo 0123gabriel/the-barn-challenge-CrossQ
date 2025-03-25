@@ -242,6 +242,8 @@ def train(env_selector, env, policy, buffer, config):
         loss_infos = []
         for _ in range(training_args["update_per_step"]):
             loss_info = policy.train(buffer, training_args["batch_size"])
+            if use_wandb:
+                wandb.log(loss_info)
             loss_infos.append(loss_info)
 
         loss_info = {}
@@ -283,10 +285,9 @@ def train(env_selector, env, policy, buffer, config):
         time.sleep(1)
     
         # Change env for next iteration
-        env, info = env_selector.get_env(succes_rate=log["Success"])
+        env, info = env_selector.get_env(success_rate=log["Success"])
         if use_wandb:
-            wandb.log({"reward_scheme": info["reward_scheme"], 
-                    "world": info["world"]}, step=n_steps)
+            wandb.log(info, step=n_steps)
         collector.set_env(env)
         
 
@@ -346,7 +347,7 @@ if __name__ == "__main__":
 
     seed(config)
     print(">>>>>>>> Creating the environments")
-    worlds_directory = "/root/e2e_crossq/src/the-barn-challenge-CrossQ/jackal_helper/worlds/BARN" # This should be automated
+    worlds_directory = "/root/e2e_crossq/src/the-barn-challenge-CrossQ/jackal_helper/worlds/Curr_BARN" # This should be automated
     env_selector= Env_Selector(config, worlds_directory)
     
     if config["env_selector"] == "random":
@@ -355,6 +356,9 @@ if __name__ == "__main__":
         env_selector = Simple_Curriculum(config, worlds_directory)
     
     env, info = env_selector.get_env()
+    
+    if use_wandb:
+        wandb.log(info)
     #env_config = config["env_config"]
     # env_config["kwargs"]["init_sim"] = False
     #env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()

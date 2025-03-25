@@ -182,7 +182,18 @@ class CrossQ_SAC(object):
             "Actor_grad_norm": self.grad_norm(self.actor),
             "Critic_grad_norm": self.grad_norm(self.critic),
             "Actor_loss": policy_loss.cpu().detach().numpy(),
-            "Critic_loss": total_q_loss.cpu().detach().numpy(),
+            "Total_critic_loss": total_q_loss.cpu().detach().numpy(),
+            "q_values_1": q_values_1.mean().item(),
+            "q_values_2": q_values_2.mean().item(),
+            "q_target": q_target.mean().item(),
+            "critic_1_loss": q1_loss.cpu().detach().numpy(),
+            "critic_2_loss": q2_loss.cpu().detach().numpy(),
+            "actor_loss": policy_loss.cpu().detach().numpy(),
+            "entropy_loss": entropy_loss.cpu().detach().numpy(),
+            "log_alpha": self.log_alpha.cpu().detach().numpy(),
+            "alpha": self.log_alpha.exp().cpu().detach().numpy(),
+            "log_probs": log_probs.cpu().detach().numpy(),
+            "entropy": -log_probs.mean().cpu().detach().numpy(),
         }
 
     def sample_transition(self, replay_buffer, batch_size=256):
