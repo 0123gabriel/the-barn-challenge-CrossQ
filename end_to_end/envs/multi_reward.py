@@ -5,10 +5,11 @@ import numpy as np
 import wandb
 from geometry_msgs.msg import Point
 
-log_dir = "logs" # TODO set this on the config file
+log_dir = "logs"  # TODO set this on the config file
+
 
 class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
-    def __init__(self, reward_function = 'mixed', use_wandb=True, **kwargs):
+    def __init__(self, reward_function="mixed", use_wandb=True, **kwargs):
         super().__init__(**kwargs)
 
         self.use_wandb = use_wandb
@@ -29,7 +30,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
                 f"Reward function '{reward_function}' not found. Available options: {list(self.reward_functions.keys())}"
             )
 
-        self.max_vel = self.range_dict['linear_velocity'][1]
+        self.max_vel = self.range_dict["linear_velocity"][1]
         # self.success_reward = 0
         # self.collision_reward = 0
         # self.goal_reward = 1
@@ -41,11 +42,11 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         #     self.init_position[0] + self.goal_position[0],
         #     self.init_position[1] + self.goal_position[1],
         # )
-        
+
         self.prev_pos = Point(x=-2.0, y=3.0, z=0.0)
         self.prev_psi = 1.57
         self.prev_vel = 0
-        
+
         # if use_wandb:  # TODO: this should be in the main file
         #     wandb.log(
         #         {
@@ -65,28 +66,25 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # TODO: Implement time penalty - Bruno
         # TODO: Implement local goal direction reward - Gabriel
         # Get previous velocity, position and orientation
-        #prev_pos, prev_psi = self._get_pos_psi()
-        #prev_vel = self.gazebo_sim.get_velocity()
-        
+        # prev_pos, prev_psi = self._get_pos_psi()
+        # prev_vel = self.gazebo_sim.get_velocity()
+
         # Add some random computations to increase load
         # for _ in range(100):
         #     x = np.random.random((100, 100))
         #     y = np.random.random((100, 100))
         #     z = np.dot(x, y)
         #     w = np.linalg.svd(z)
-        
+
         # step the simulation
         self._take_action(action)
         self.step_count += 1
-        pos, psi = self._get_pos_psi() # Returns the position in the world frame
-        #print('Position: ', pos, 'Orientation: ', psi, '\n')
+        pos, psi = self._get_pos_psi()  # Returns the position in the world frame
+        # print('Position: ', pos, 'Orientation: ', psi, '\n')
         vel = self.gazebo_sim.get_velocity()
 
         if self.use_wandb:
-            wandb.log({
-                "robot_x": pos.x,
-                "robot_y": pos.y
-            })
+            wandb.log({"robot_x": pos.x, "robot_y": pos.y})
 
         # self.gazebo_sim.unpause()
         # compute observation
@@ -98,22 +96,22 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         global_goal_pos = np.array(
             [self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y]
         )
-        
+
         success = np.linalg.norm(global_goal_pos) < 1.0
-        #print('Norm to the goal: ', np.linalg.norm(global_goal_pos))
-        #print('X pos: ', pos.x)
-        #print('Y pos: ', pos.y)
+        # print('Norm to the goal: ', np.linalg.norm(global_goal_pos))
+        # print('X pos: ', pos.x)
+        # print('Y pos: ', pos.y)
 
         truncation = self.step_count >= self.max_step  # Timeout
 
         collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
         if collided:
-            pass #print('Collided ==================================================================================================')
+            pass  # print('Collided ==================================================================================================')
         self.collision_count += int(collided)
-        #print(self.collision_count)
+        # print(self.collision_count)
 
         termination = flip or success or self.collision_count >= self.max_collision
-        #rew = 1
+        # rew = 1
 
         rew = self.reward_func(
             self.prev_vel,
@@ -127,7 +125,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             truncation,
             global_goal_pos,
         )  #! Improve once reward schemes are implemented
-        
+
         smooth_reward = self.smooth_reward_scheme(
             self.prev_vel,
             vel,
@@ -140,7 +138,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             truncation,
             global_goal_pos,
         )
-        
+
         lidar_reward = self.lidar_based_scheme(
             self.prev_vel,
             vel,
@@ -153,7 +151,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             truncation,
             global_goal_pos,
         )
-        
+
         simple_reward = self.simple_reward_scheme(
             self.prev_vel,
             vel,
@@ -168,20 +166,20 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         )
 
         if self.use_wandb:
-                wandb.log(
-                    {
-                        "mixed_reward": rew,
-                        "smooth_reward": smooth_reward,
-                        "lidar_reward": lidar_reward,
-                        "simple_reward": simple_reward
-                    }
-                )
+            wandb.log(
+                {
+                    "mixed_reward": rew,
+                    "smooth_reward": smooth_reward,
+                    "lidar_reward": lidar_reward,
+                    "simple_reward": simple_reward,
+                }
+            )
 
         self.last_goal_pos = global_goal_pos
 
         # Update self.prev_pos, self.prev_psi and self.prev_vel
         self.prev_pos = pos
-        self.prev_psi = psi  
+        self.prev_psi = psi
         self.prev_vel = vel
 
         info = dict(
@@ -219,7 +217,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     ):
         c_1 = 1
         c_2 = -0.3
-        r_simple = c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos)) + c_2
+        r_simple = (
+            c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
+            + c_2
+        )
 
         r_final = 0
         if collided:
@@ -230,12 +231,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             r_final += self.failure_reward
 
         if self.use_wandb:
-                wandb.log(
-                    {
-                        "reward_breakdown/simple_reward": r_simple,
-                        "reward_breakdown/termination_reward": r_final
-                    }
-                )
+            wandb.log(
+                {
+                    "reward_breakdown/simple_reward": r_simple,
+                    "reward_breakdown/termination_reward": r_final,
+                }
+            )
 
         return r_simple + r_final
 
@@ -254,7 +255,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     ):
         # time penalty
         r_time = self._time_penalty(self.step_count, self.max_step)
-        
+
         # smoothness reward
         r_smooth = self._smoothness_reward(prev_pos, prev_psi, pos, psi)
 
@@ -274,15 +275,15 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             r_final = self.failure_reward
 
         if self.use_wandb:
-                wandb.log(
-                    {
-                        "time_penalty": r_time,
-                        "smoothness_reward": r_smooth,
-                        "speed_reward": r_speed,
-                        "approach_reward": r_approach,
-                        "termination_reward": r_final
-                    }
-                )
+            wandb.log(
+                {
+                    "time_penalty": r_time,
+                    "smoothness_reward": r_smooth,
+                    "speed_reward": r_speed,
+                    "approach_reward": r_approach,
+                    "termination_reward": r_final,
+                }
+            )
 
         return r_time + r_smooth + r_speed + r_approach + r_final
 
@@ -299,19 +300,18 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         truncation,
         global_goal_pos,
     ):
-        
         # Stop reward
         r_stop = self._stop_reward(prev_pos, pos)
-        #print(r)
+        # print(r)
         # R forward and R turn
         r_straight = self._going_straight_reward(prev_psi, psi)
-        #print(r)
+        # print(r)
         # R vel
         r_speed_simple = self._speed_reward_simple(vel, self.max_vel)
-        #print(r)
+        # print(r)
         # Reward for distance to obstacle
         r_obs_dist = self._obs_dist_reward()
-        #print(r)
+        # print(r)
 
         r_final = 0
         # termination rewards
@@ -321,15 +321,17 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             r_final = self.success_reward
         elif truncation:
             r_final = self.failure_reward
-        
+
         if self.use_wandb:
-            wandb.log({
-                "lidar/stop_reward": r_stop,
-                "lidar/straight_reward": r_straight,
-                "lidar/speed_reward": r_speed_simple,
-                "lidar/obstacle_distance_reward": r_obs_dist,
-                "lidar/termination_reward": r_final
-            })
+            wandb.log(
+                {
+                    "lidar/stop_reward": r_stop,
+                    "lidar/straight_reward": r_straight,
+                    "lidar/speed_reward": r_speed_simple,
+                    "lidar/obstacle_distance_reward": r_obs_dist,
+                    "lidar/termination_reward": r_final,
+                }
+            )
 
         return r_stop + r_straight + r_speed_simple + r_obs_dist + r_final
 
@@ -349,7 +351,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # Simple reward component
         c_1 = 1
         c_2 = -0.3
-        r_simple = c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos)) + c_2
+        r_simple = (
+            c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
+            + c_2
+        )
 
         # Time and smoothness components
         r_time = self._time_penalty(self.step_count, self.max_step)
@@ -357,7 +362,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         r_speed = self._speed_reward_soft(prev_vel, vel, self.max_vel)
         r_approach = self._goal_approach_reward(global_goal_pos)
 
-        # Lidar-based components  
+        # Lidar-based components
         r_stop = self._stop_reward(prev_pos, pos)
         r_straight = self._going_straight_reward(prev_psi, psi)
         r_obs_dist = self._obs_dist_reward()
@@ -372,19 +377,31 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             r_final = self.failure_reward
 
         if self.use_wandb:
-            wandb.log({
-            "simple_reward": r_simple, #done
-            "time_penalty": r_time, # done
-            "smoothness_reward": r_smooth, #done
-            "speed_reward": r_speed, #done
-            "approach_reward": r_approach,
-            "stop_reward": r_stop, #done
-            "straight_reward": r_straight,
-            "obstacle_distance": r_obs_dist, #done
-            "termination_reward": r_final
-            })
+            wandb.log(
+                {
+                    "simple_reward": r_simple,  # done
+                    "time_penalty": r_time,  # done
+                    "smoothness_reward": r_smooth,  # done
+                    "speed_reward": r_speed,  # done
+                    "approach_reward": r_approach,
+                    "stop_reward": r_stop,  # done
+                    "straight_reward": r_straight,
+                    "obstacle_distance": r_obs_dist,  # done
+                    "termination_reward": r_final,
+                }
+            )
 
-        total_reward = r_simple + r_time + r_smooth + r_speed + r_approach + r_stop + r_straight + r_obs_dist + r_final
+        total_reward = (
+            r_simple
+            + r_time
+            + r_smooth
+            + r_speed
+            + r_approach
+            + r_stop
+            + r_straight
+            + r_obs_dist
+            + r_final
+        )
         return total_reward
 
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
@@ -418,14 +435,14 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return reward
 
     def _speed_reward_soft(self, last_vel, current_vel, max_vel, alpha=10, beta=20):
-        reward = (
-            0.001 * (1 / (1 + np.exp(-alpha * (current_vel - max_vel / 2)))
-            - beta * (current_vel - last_vel) ** 2)
+        reward = 0.001 * (
+            1 / (1 + np.exp(-alpha * (current_vel - max_vel / 2)))
+            - beta * (current_vel - last_vel) ** 2
         )
         return reward
 
     def _speed_reward_simple(self, current_vel, max_vel, limit=0.4):
-        return np.clip(current_vel / max_vel, -0.01, limit)*0.25
+        return np.clip(current_vel / max_vel, -0.01, limit) * 0.25
 
     def _going_straight_reward(self, current_psi, prev_psi, alpha=10):
         if np.abs(current_psi - prev_psi) < 0.01:
@@ -443,10 +460,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         if np.any(valid):
             min_distance = np.min(ranges[valid])
         else:
-            min_distance = float('inf')  
-        #print(min_distance)
-        return - 1/(min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
-        
+            min_distance = float("inf")
+        # print(min_distance)
+        return -1 / (min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
+
     def _local_goal_dir_reward(self):
         local_g_x = self.gazebo_sim.local_goal[0]
         local_g_y = self.gazebo_sim.local_goal[1]
@@ -468,7 +485,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         alignment = np.dot(unit_goal_vector, robot_heading)
 
         # Convert to reward (-1 to 1 range)
-        reward = alignment * 0.001
+        reward = alignment * 0.004
         return reward
 
     def _global_goal_dist_reward(self):
@@ -480,7 +497,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         distance = np.sqrt((goal_pos[0] - robot_x) ** 2 + (goal_pos[1] - robot_y) ** 2)
 
         # Convert distance to reward (closer = higher reward)
-        reward = 0.001 * (1 / (distance + 1))  # Adding 1 to avoid division by zero
+        reward = 0.004 * (1 / (distance + 1))  # Adding 1 to avoid division by zero
         return reward
 
     def _collision_reward(self):
@@ -504,7 +521,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         getting_closer = (
             np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos)
         ) > 0
-        reward = 0.001 * getting_closer
+        reward = 0.005 * getting_closer
         return reward
 
     def switch_reward_function(self, reward_function):
