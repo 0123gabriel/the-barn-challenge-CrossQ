@@ -89,7 +89,7 @@ class Robot_config():
             yhat = y
         gphat = np.column_stack((xhat, yhat))
         gphat.tolist()
-        print('GPHAT', gphat, '==================================================================================================================')
+        #print('GPHAT', gphat, '==================================================================================================================')
         self.global_path = gphat
 
 def transform_lg(wp, X, Y, PSI):
@@ -254,9 +254,9 @@ class MoveBase():
 
     def get_global_path(self):
         gp_bt = self.robot_config.global_path
-        print('Global Path before transformation', gp_bt.T.shape, '==================================================================================================================')
-        gp_at = transform_gp(gp_bt, self.robot_config.X, self.robot_config.Y, self.robot_config.PSI)
-        print('Global Path after transformation', gp_at.T.shape, '==================================================================================================================')
+        #print('Global Path before transformation', gp_bt.T.shape, '==================================================================================================================')
+        #gp_at = transform_gp(gp_bt, self.robot_config.X, self.robot_config.Y, self.robot_config.PSI)
+        #print('Global Path after transformation', gp_at.T.shape, '==================================================================================================================')
         return gp_bt
 
     def get_costmap(self):
