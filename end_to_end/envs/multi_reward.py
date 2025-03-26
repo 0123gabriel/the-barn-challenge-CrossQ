@@ -312,6 +312,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # Reward for distance to obstacle
         r_obs_dist = self._obs_dist_reward()
         # print(r)
+        
+        # Can't remember if this is necessary
+        r_goal_reward = self._global_goal_dist_reward(global_goal_pos)
 
         r_final = 0
         # termination rewards
@@ -330,10 +333,11 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
                     "lidar/speed_reward": r_speed_simple,
                     "lidar/obstacle_distance_reward": r_obs_dist,
                     "lidar/termination_reward": r_final,
+                    "lidar/global_goal_reward": r_goal_reward,
                 }
             )
 
-        return r_stop + r_straight + r_speed_simple + r_obs_dist + r_final
+        return r_stop + r_straight + r_speed_simple + r_obs_dist + r_final + r_goal_reward
 
     def mixed_scheme(
         self,
@@ -488,16 +492,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         reward = alignment * 0.004
         return reward
 
-    def _global_goal_dist_reward(self):
-        goal_pos = self.move_base.goal_position
-        robot_pos, _ = self._get_pos_psi()
-        robot_x = robot_pos.x
-        robot_y = robot_pos.y
+    def _global_goal_dist_reward(self, global_goal_pos):
         # Calculate Euclidean distance between robot and goal
-        distance = np.sqrt((goal_pos[0] - robot_x) ** 2 + (goal_pos[1] - robot_y) ** 2)
+        distance = np.linalg.norm(global_goal_pos)
 
         # Convert distance to reward (closer = higher reward)
-        reward = 0.004 * (1 / (distance + 1))  # Adding 1 to avoid division by zero
+        reward = 0.005 * (1 / (distance + 1))  # Adding 1 to avoid division by zero
         return reward
 
     def _collision_reward(self):
