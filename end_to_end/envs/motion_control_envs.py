@@ -35,9 +35,10 @@ class MotionControlContinuous(JackalGazebo):
         self.base_local_planner = "base_local_planner/TrajectoryPlannerROS"
         self.move_base = self.launch_move_base(goal_position=self.goal_position, base_local_planner=self.base_local_planner)
         time.sleep(5)
-        self.gazebo_sim = GazeboSimulation()
+        #self.gazebo_sim = GazeboSimulation()
 
     def launch_move_base(self, goal_position, base_local_planner):
+        print('Launching move base ================================================================================================================')
         rospack = rospkg.RosPack()
         self.BASE_PATH = rospack.get_path('jackal_helper')
         launch_file = os.path.join(self.BASE_PATH, 'launch', 'move_base_DWA.launch')
@@ -83,7 +84,8 @@ class MotionControlContinuous(JackalGazebo):
         
         # goal_pos = self.transform_goal(self.world_frame_goal, pos, psi) / 5.0 - 1  # roughly (-1, 1) range
         #print('Before global path')
-        goal_pos = self.move_base.get_global_path()[-1] / 5.0 - 1
+        goal_pos = self.move_base.get_global_path()[-1] #/ 5.0 - 1
+        self.gazebo_sim.visualize_local_goals(goal_pos[0], goal_pos[1])
         #print('after global path')
         
         bias = (self.action_space.high + self.action_space.low) / 2.

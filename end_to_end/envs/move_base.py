@@ -89,6 +89,7 @@ class Robot_config():
             yhat = y
         gphat = np.column_stack((xhat, yhat))
         gphat.tolist()
+        print('GPHAT', gphat, '==================================================================================================================')
         self.global_path = gphat
 
 def transform_lg(wp, X, Y, PSI):
@@ -123,7 +124,7 @@ class MoveBase():
 
         self.robot_config = Robot_config()
         self.sub_robot = rospy.Subscriber("/odometry/filtered", Odometry, self.robot_config.get_robot_status)
-        # self.sub_gp = rospy.Subscriber("/move_base/" + self.base_local_planner + "/global_plan", Path, self.robot_config.get_global_path)
+        #self.sub_gp = rospy.Subscriber("/move_base/" + self.base_local_planner + "/global_plan", Path, self.robot_config.get_global_path)
         self.sub_gp = rospy.Subscriber("/move_base/NavfnROS/plan", Path, self.robot_config.get_global_path)
         self._make_plan = rospy.ServiceProxy('/move_base/make_plan', GetPlan)
 
@@ -244,6 +245,7 @@ class MoveBase():
                 lg_x = lg[0]
                 lg_y = lg[1]
 
+        print('Local Goal: ', lg_x, lg_y, '==================================================================================================================')
         local_goal = Pose()
         local_goal.position.x = lg_x
         local_goal.position.y = lg_y
@@ -251,9 +253,11 @@ class MoveBase():
         return local_goal, dist_last_lg
 
     def get_global_path(self):
-        gp = self.robot_config.global_path
-        gp = transform_gp(gp, self.robot_config.X, self.robot_config.Y, self.robot_config.PSI)
-        return gp.T
+        gp_bt = self.robot_config.global_path
+        print('Global Path before transformation', gp_bt.T.shape, '==================================================================================================================')
+        gp_at = transform_gp(gp_bt, self.robot_config.X, self.robot_config.Y, self.robot_config.PSI)
+        print('Global Path after transformation', gp_at.T.shape, '==================================================================================================================')
+        return gp_bt
 
     def get_costmap(self):
         cm = None

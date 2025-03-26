@@ -4,11 +4,12 @@ import numpy as np
 from std_srvs.srv import Empty
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, GetModelState
-from geometry_msgs.msg import Quaternion, Twist
+from geometry_msgs.msg import Quaternion, Twist, Vector3
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, ColorRGBA
 from nav_msgs.msg import Path
+from visualization_msgs.msg import Marker
 
 def create_model_state(x, y, z, angle):
     # the rotation of the angle is in (0, 0, 1) direction
@@ -42,6 +43,7 @@ class GazeboSimulation():
         self.real_vel_sub = rospy.Subscriber("/jackal_velocity_controller/odom", Odometry, self.real_vel_monitor)
         self._local_goal_sub = rospy.Subscriber('/move_base/TrajectoryPlannerROS/local_plan', Path, self.current_goal_pos)
         self._cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+        self.marker_local_goal_pub = rospy.Publisher('/local_goal_marker', Marker, queue_size=10)
         self.real_vel = 0
     
     def pub_velocity(self, vel):
@@ -53,6 +55,30 @@ class GazeboSimulation():
     def current_goal_pos(self, msg):
         path = msg.poses
         self.local_goal = path[-1]
+        print('Local goal X: ', self.local_goal[0], 'Local goal Y: ', self.local_goal[1], '================================================================')
+        #self.visualize_local_goals(self.local_goal[0], self.local_goal[1])
+    
+    def visualize_local_goals(self, x, y):
+        # Purple track for robot trajectory over time
+        print(x, y)
+        marker = Marker()
+        marker.header.stamp = rospy.Time.now()
+        marker.header.frame_id = '/odom'
+        marker.ns = 'robot_local_goal'
+        marker.id = 1
+        marker.type = marker.CYLINDER
+        marker.action = marker.ADD
+        marker.pose.position.x = x
+        marker.pose.position.y = y
+        marker.pose.orientation.x = 0
+        marker.pose.orientation.y = 0
+        marker.pose.orientation.z = 0
+        marker.pose.orientation.w = 1
+        #marker.pose.orientation = orientation
+        marker.scale = Vector3(x=0.3, y=0.3, z=0.5)
+        marker.color = ColorRGBA(r=0.5, b=0.8, a=1.0)
+        marker.lifetime = rospy.Duration()
+        self.marker_local_goal_pub.publish(marker)
     
     def get_velocity(self):
         return self.real_vel
