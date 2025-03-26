@@ -172,6 +172,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
                     "smooth_reward": smooth_reward,
                     "lidar_reward": lidar_reward,
                     "simple_reward": simple_reward,
+                    "distance_to_goal": np.linalg.norm(global_goal_pos),
                 }
             )
 
