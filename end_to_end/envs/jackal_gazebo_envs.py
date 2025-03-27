@@ -36,7 +36,7 @@ class JackalGazebo(gym.Env):
         """
         super().__init__()
         # config
-        print('Maximum collision allowed: ',  max_collision, '=============================================================================================')
+        #print('Maximum collision allowed: ',  max_collision, '=============================================================================================')
         self.gui = gui
         self.verbose = verbose
         

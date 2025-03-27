@@ -38,7 +38,7 @@ class MotionControlContinuous(JackalGazebo):
         #self.gazebo_sim = GazeboSimulation()
 
     def launch_move_base(self, goal_position, base_local_planner):
-        print('Launching move base ================================================================================================================')
+        #print('Launching move base ================================================================================================================')
         rospack = rospkg.RosPack()
         self.BASE_PATH = rospack.get_path('jackal_helper')
         launch_file = os.path.join(self.BASE_PATH, 'launch', 'move_base_DWA.launch')

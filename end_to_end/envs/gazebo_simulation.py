@@ -61,7 +61,7 @@ class GazeboSimulation():
     
     def visualize_global_goal(self, x, y):
         # Purple track for robot trajectory over time
-        print(x, y)
+        #print(x, y)
         marker = Marker()
         marker.header.stamp = rospy.Time.now()
         marker.header.frame_id = '/odom'
@@ -83,7 +83,7 @@ class GazeboSimulation():
         
     def visualize_local_goals(self, x, y):
         # Purple track for robot trajectory over time
-        print(x, y)
+        #print(x, y)
         marker = Marker()
         marker.header.stamp = rospy.Time.now()
         marker.header.frame_id = '/odom'
