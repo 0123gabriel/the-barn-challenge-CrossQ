@@ -115,7 +115,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self.collision_count += int(collided)
         # print(self.collision_count)
 
-        termination = flip or success or self.collision_count >= self.max_collision
+        termination = flip or success or self.collision_count >= self.max_collision or self.collision_with_lidar()
         # rew = 1
 
         rew = self.reward_func(
@@ -468,13 +468,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return -0.01
 
     def _obs_dist_reward(self, alpha=0.1):
-        laser_data = self.gazebo_sim.get_laser_scan()
-        ranges = np.array(laser_data.ranges)
-        valid = (ranges > 0) & (ranges != np.inf)
-        if np.any(valid):
-            min_distance = np.min(ranges[valid])
-        else:
-            min_distance = float("inf")
+        min_distance = self.get_valid_laser_data()
         # print(min_distance)
         return -1 / (min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
 
@@ -541,3 +535,21 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             raise ValueError(
                 f"Reward function '{reward_function}' not found. Available options: {list(self.reward_functions.keys())}"
             )
+    
+    def get_valid_laser_data(self):
+        laser_data = self.gazebo_sim.get_laser_scan()
+        ranges = np.array(laser_data.ranges)
+        valid = (ranges > 0) & (ranges != np.inf)
+        if np.any(valid):
+            min_distance = np.min(ranges[valid])
+        else:
+            min_distance = float("inf")
+        
+        return min_distance
+    
+    def collision_with_lidar(self):
+        min_distance = self.get_valid_laser_data()
+        if min_distance < 0.2:
+            return True
+        else:
+            return False

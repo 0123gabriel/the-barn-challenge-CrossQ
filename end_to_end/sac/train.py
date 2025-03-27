@@ -358,7 +358,7 @@ if __name__ == "__main__":
     env, info = env_selector.get_env()
     
     if use_wandb:
-        wandb.log(info)
+        wandb.log(info, step=0)
     #env_config = config["env_config"]
     # env_config["kwargs"]["init_sim"] = False
     #env_config["kwargs"]["world_name"] = 'BARN/world_21.world' #self.get_random_world()

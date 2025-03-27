@@ -302,7 +302,7 @@ class Env_Selector:
         env_config["kwargs"]["init_sim"] = True
         env_config["kwargs"]["world_name"] = self.get_random_world()
         # Randomly choose a reward type from the available options
-        reward_types = ["smooth", "lidar", "simple", "mixed"]
+        reward_types = ["smooth", "lidar", "simple", "mixed", "local", "simple_local"]
         env_config["kwargs"]["reward_function"] = np.random.choice(reward_types)
 
         info = {
@@ -377,7 +377,7 @@ class Simple_Curriculum:
         
         # Define curriculum stages with their corresponding parameters
         curriculum_stages = [
-            {"fill_pct_range": [0.0, 0.10], "distance_range": [10, 15], "init_position": [-2, 5, 1.57], "goal_position": [0, 2.5, 0]},  # Stage 0
+            {"fill_pct_range": [0.0, 0.10], "distance_range": [10, 15], "init_position": [-2, 4, 1.57], "goal_position": [0, 3.5, 0]},  # Stage 0
             {"fill_pct_range": [0.10, 0.20], "distance_range": [10, 15], "init_position": [-2, 4, 1.57], "goal_position": [0, 5.5, 0]}, # Stage 1
             {"fill_pct_range": [0.0, 0.10], "distance_range": [15, 25], "init_position": [-2, 4, 1.57], "goal_position": [0, 7, 0]},  # Stage 2
             {"fill_pct_range": [0.1, 0.2], "distance_range": [15, 25], "init_position": [-2, 4, 1.57], "goal_position": [0, 7, 0]},   # Stage 3
@@ -403,6 +403,10 @@ class Simple_Curriculum:
             fill_pct_range=params["fill_pct_range"], 
             distance_range=params["distance_range"]
         )
+        
+        init_pos_offset = round(random.uniform(-1.50, 1.25), 2) # Random x offset
+        params["init_position"][0] += init_pos_offset
+        params["goal_position"][0] -= init_pos_offset
         
         env_config["kwargs"]["world_name"] = world_name
         reward_types = ["smooth", "lidar", "simple", "mixed"]
