@@ -151,6 +151,7 @@ def initialize_policy(config, env, init_buffer=True):
             training_config["encoder_hidden_layer_size"],
         ),
         action_dim=action_dim,
+        input_dim=input_dim,
         action_space_high=action_space_high, 
         action_space_low=action_space_low
     ).to(device)
