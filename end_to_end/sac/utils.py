@@ -395,9 +395,9 @@ class Simple_Curriculum:
             
         # Get parameters for the current stage
         if self.stage < len(curriculum_stages):
-            params = curriculum_stages[self.stage]
+            params = curriculum_stages[self.stage].copy()
         else:
-            params = final_stage_params
+            params = final_stage_params.copy()
             
         world_name = self.get_env_with_params(
             fill_pct_range=params["fill_pct_range"], 
