@@ -312,13 +312,13 @@ class Actor(nn.Module):
 
     def forward(self, state):
         #print('State', state.shape)
-        cutoff = (self.input_dim - 720) // 4
-        no_laser_data = state[:, :, -cutoff:].reshape(state.shape[0], -1)
-        state = state[:, :, :-cutoff]
-        s = self.state_preprocess(state) if self.state_preprocess else state
+        cutoff = (self.input_dim - 720) // 4 # 6
+        no_laser_data = state[:, :, -cutoff:].reshape(state.shape[0], -1) # 24
+        state = state[:, :, :-cutoff] # 720
+        s = self.state_preprocess(state) if self.state_preprocess else state # 720
         #print('State: ', s.shape)
         #print('No laser data: ', no_laser_data.shape)
-        s = torch.cat([s, no_laser_data], dim=1)
+        s = torch.cat([s, no_laser_data], dim=1) # 744
         
         #print('S', s.shape)
         mean = self.mean(self.head(s))
