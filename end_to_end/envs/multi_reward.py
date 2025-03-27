@@ -3,7 +3,7 @@ from envs.jackal_gazebo_envs import JackalGazeboLaser
 
 import numpy as np
 import wandb
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, Pose
 
 log_dir = "logs"  # TODO set this on the config file
 
@@ -89,6 +89,11 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # self.gazebo_sim.unpause()
         # compute observation
         obs = self._get_observation(pos, psi, action)
+        local_goal, dist_local_goal = self.move_base.get_local_goal()
+        #print("\033c", end="")  # Clear the terminal
+        #print('Local goal: ', local_goal, '======================================================================================================')
+        #print('Distance to local goal: ', dist_local_goal, '====================================================================================')
+        self.gazebo_sim.visualize_local_goals(local_goal.position.x, local_goal.position.y)
 
         # compute termination
         flip = pos.z > 0.1  # robot flip
@@ -97,7 +102,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             [self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y]
         )
 
-        success = np.linalg.norm(global_goal_pos) < 1.0
+        success = np.linalg.norm(global_goal_pos) < 0.5
         # print('Norm to the goal: ', np.linalg.norm(global_goal_pos))
         # print('X pos: ', pos.x)
         # print('Y pos: ', pos.y)
@@ -105,8 +110,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         truncation = self.step_count >= self.max_step  # Timeout
 
         collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
-        if collided:
-            pass  # print('Collided ==================================================================================================')
+        # if collided:
+        #     pass  # print('Collided ==================================================================================================')
         self.collision_count += int(collided)
         # print(self.collision_count)
 
@@ -164,6 +169,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             truncation,
             global_goal_pos,
         )
+
+        
+        #print("distance_to_goal:", np.linalg.norm(global_goal_pos))
+        #print("global_goal_x:", global_goal_pos[0], "global_goal_y:", global_goal_pos[1])
 
         if self.use_wandb:
             wandb.log(

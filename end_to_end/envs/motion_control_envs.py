@@ -85,7 +85,7 @@ class MotionControlContinuous(JackalGazebo):
         # goal_pos = self.transform_goal(self.world_frame_goal, pos, psi) / 5.0 - 1  # roughly (-1, 1) range
         #print('Before global path')
         goal_pos = self.move_base.get_global_path()[-1] #/ 5.0 - 1
-        self.gazebo_sim.visualize_local_goals(goal_pos[0], goal_pos[1])
+        self.gazebo_sim.visualize_global_goal(goal_pos[0], goal_pos[1])
         #print('after global path')
         
         bias = (self.action_space.high + self.action_space.low) / 2.

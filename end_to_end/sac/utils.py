@@ -391,6 +391,7 @@ class Simple_Curriculum:
         # Increment stage if success rate is high enough
         if self.current_sucess_rate > 0.6:
             self.stage += 1
+            self.current_sucess_rate = 0.0
             
         # Get parameters for the current stage
         if self.stage < len(curriculum_stages):

@@ -235,17 +235,17 @@ class MoveBase():
                 if dist > los:
                     lg_flag = 1
                     self.robot_config.last_lg = wp
-                    lg = transform_lg(wp, X, Y, PSI)
-                    lg_x = lg[0]
-                    lg_y = lg[1]
+                    #lg = transform_lg(wp, X, Y, PSI)
+                    lg_x = wp[0]
+                    lg_y = wp[1]
                     break
             if lg_flag == 0:
                 self.robot_config.last_lg = gp[-1]
-                lg = transform_lg(gp[-1], X, Y, PSI)
-                lg_x = lg[0]
-                lg_y = lg[1]
+                #lg = transform_lg(gp[-1], X, Y, PSI)
+                lg_x = gp[-1][0]
+                lg_y = gp[-1][1]
 
-        print('Local Goal: ', lg_x, lg_y, '==================================================================================================================')
+        #print('Local Goal: ', lg_x, lg_y, '==================================================================================================================')
         local_goal = Pose()
         local_goal.position.x = lg_x
         local_goal.position.y = lg_y
