@@ -142,7 +142,7 @@ def initialize_policy(config, env, init_buffer=True):
         "history_length": config["env_config"]["stack_frame"],
     }
 
-    input_dim = 736 # Input dim is [laser dimensio + stack frames*size of local goal + stack frames*action dim]
+    input_dim = 744 # Input dim is [laser dimensio + stack frames*size of local goal + stack frames*action dim] + local_goal * stack frames
     actor = Actor(
         state_preprocess=get_encoder(encoder_type, encoder_args),
         head=MLP_CrossQ(
