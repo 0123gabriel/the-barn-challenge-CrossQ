@@ -266,8 +266,9 @@ class CrossQCritic(nn.Module):
     def forward(
         self, state: torch.Tensor, action: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        no_laser_data = state[:, :, -4:].reshape(state.shape[0], -1)
-        state = state[:, :, :-4]
+        cutoff = (self.state_preprocess1.input_dim - 720) // 4
+        no_laser_data = state[:, :, -cutoff:].reshape(state.shape[0], -1)
+        state = state[:, :, :-cutoff]
         state1 = self.state_preprocess1(state) if self.state_preprocess1 else state
         state1 = torch.cat([state1, no_laser_data], dim=1)
         sa1 = torch.cat([state1, action], dim=1)
@@ -309,8 +310,9 @@ class Actor(nn.Module):
 
     def forward(self, state):
         #print('State', state.shape)
-        no_laser_data = state[:, :, -4:].reshape(state.shape[0], -1)
-        state = state[:, :, :-4]
+        cutoff = (self.state_preprocess.input_dim - 720) // 4
+        no_laser_data = state[:, :, -cutoff:].reshape(state.shape[0], -1)
+        state = state[:, :, :-cutoff]
         s = self.state_preprocess(state) if self.state_preprocess else state
         #print('State: ', s.shape)
         #print('No laser data: ', no_laser_data.shape)

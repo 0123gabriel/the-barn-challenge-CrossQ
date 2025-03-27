@@ -58,27 +58,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         #     )
 
     def step(self, action):
-        # TODO: add to infos the reward function used, and the enviroment parameters
-        # TODO: implement the reward
-        # TODO: Implement smoothness rewards - Bruno
-        # TODO: Implement speed rewards - Bruno
-        # TODO: Implement collision penalties - Gabriel
-        # TODO: Implement obstacle distance penalty - Gabriel
-        # TODO: Implement global goal distance reward - Gabriel
-        # TODO: Implement going straight reward > turning rewards - Bruno
-        # TODO: Implement time penalty - Bruno
-        # TODO: Implement local goal direction reward - Gabriel
-        # Get previous velocity, position and orientation
-        # prev_pos, prev_psi = self._get_pos_psi()
-        # prev_vel = self.gazebo_sim.get_velocity()
-
-        # Add some random computations to increase load
-        # for _ in range(100):
-        #     x = np.random.random((100, 100))
-        #     y = np.random.random((100, 100))
-        #     z = np.dot(x, y)
-        #     w = np.linalg.svd(z)
-
         # step the simulation
         self._take_action(action)
         self.step_count += 1
@@ -93,6 +72,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # compute observation
         obs = self._get_observation(pos, psi, action)
         local_goal, dist_local_goal = self.move_base.get_local_goal()
+        
+        obs = np.concatenate((obs, np.array([local_goal.position.x, local_goal.position.y]))) # this changes dimensions from 724 to 726
         #print("\033c", end="")  # Clear the terminal
         #print('Local goal: ', local_goal, '======================================================================================================')
         #print('Distance to local goal: ', dist_local_goal, '====================================================================================')
