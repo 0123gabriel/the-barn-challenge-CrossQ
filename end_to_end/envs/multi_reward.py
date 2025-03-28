@@ -58,6 +58,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         #     )
 
     def step(self, action):
+        #print('STEP ===================================================================================================================')
         # step the simulation
         self._take_action(action)
         self.step_count += 1
@@ -73,10 +74,11 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         obs = self._get_observation(pos, psi, action)
         local_goal, dist_local_goal = self.move_base.get_local_goal()
         
-        obs = np.concatenate((obs, np.array([local_goal.position.x, local_goal.position.y]))) # this changes dimensions from 724 to 726
-        #print("\033c", end="")  # Clear the terminal
-        #print('Local goal: ', local_goal, '======================================================================================================')
-        #print('Distance to local goal: ', dist_local_goal, '====================================================================================')
+        obs = np.concatenate((obs, np.array([local_goal.position.x/1.5, local_goal.position.y/1.5]))) # this changes dimensions from 724 to 726, and 1.5 is to normalize (-1, 1)
+        #print('Observation shape', obs.shape, '===================================================================================')
+        print("\033c", end="")  # Clear the terminal
+        print('Local goal: ', local_goal, '======================================================================================================')
+        print('Distance to local goal: ', dist_local_goal, '====================================================================================')
         self.gazebo_sim.visualize_local_goals(local_goal.position.x, local_goal.position.y)
 
         # compute termination

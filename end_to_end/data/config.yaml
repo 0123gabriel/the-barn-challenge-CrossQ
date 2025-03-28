@@ -40,7 +40,7 @@ training_config:
   encoder_hidden_layer_size: 512
   exploration_noise_start: 0.1
   exploration_noise_end: 0.0999
-  pre_collect: 1000
+  pre_collect: 400
   log_intervals: 20000
   validation: False
   val_interval: 1000000

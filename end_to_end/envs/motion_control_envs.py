@@ -71,6 +71,8 @@ class MotionControlContinuous(JackalGazebo):
         self._clear_costmap()
         #print('get_observation')
         obs = self._get_observation(0, 0, np.array([0, 0]))
+        local_goal, dist_local_goal = self.move_base.get_local_goal()
+        obs = np.concatenate((obs, np.array([local_goal.position.x, local_goal.position.y])))
         # self.gazebo_sim.pause()
         
         goal_pos = np.array([self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y])
@@ -84,8 +86,9 @@ class MotionControlContinuous(JackalGazebo):
         
         # goal_pos = self.transform_goal(self.world_frame_goal, pos, psi) / 5.0 - 1  # roughly (-1, 1) range
         #print('Before global path')
-        goal_pos = self.move_base.get_global_path()[-1] #/ 5.0 - 1
+        goal_pos = self.move_base.get_global_path()[-1] 
         self.gazebo_sim.visualize_global_goal(goal_pos[0], goal_pos[1])
+        goal_pos = goal_pos / 5.0 - 1
         #print('after global path')
         
         bias = (self.action_space.high + self.action_space.low) / 2.

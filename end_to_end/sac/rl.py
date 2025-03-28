@@ -314,11 +314,11 @@ class Actor(nn.Module):
         #print('State', state.shape)
         cutoff = (self.input_dim - 720) // 4 # 6
         no_laser_data = state[:, :, -cutoff:].reshape(state.shape[0], -1) # 24
-        print('No laser data: ', no_laser_data.shape)
+        #print('No laser data: ', no_laser_data.shape)
         state = state[:, :, :-cutoff] # 720
-        print('State before preprocessing: ', state.shape)
+        #print('State before preprocessing: ', state.shape)
         s = self.state_preprocess(state) if self.state_preprocess else state # 720
-        print('State after preprocessing: ', s.shape) 
+        #print('State after preprocessing: ', s.shape) 
         #print('No laser data: ', no_laser_data.shape)
         s = torch.cat([s, no_laser_data], dim=1) # 744
         
