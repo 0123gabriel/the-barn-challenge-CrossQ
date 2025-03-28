@@ -36,6 +36,7 @@ class MotionControlContinuous(JackalGazebo):
         self.move_base = self.launch_move_base(goal_position=self.goal_position, base_local_planner=self.base_local_planner)
         time.sleep(5)
         #self.gazebo_sim = GazeboSimulation()
+        self.num_resets = 0
 
     def launch_move_base(self, goal_position, base_local_planner):
         #print('Launching move base ================================================================================================================')
@@ -54,7 +55,13 @@ class MotionControlContinuous(JackalGazebo):
         self.collision_count = 0
         # Reset robot in odom frame clear_costmap
         #self.gazebo_sim.reset()
-        self.gazebo_sim.reset_init_model_state(self.init_position)
+        if self.num_resets == 0:
+            self.gazebo_sim.reset_init_model_state(self.init_position)
+        else:
+            init_pos = [self.init_position[0] + np.random.uniform(-1, 1), 
+                        self.init_position[1],
+                        self.init_position[2]]
+            self.gazebo_sim.reset_init_model_state(init_pos)
         self.gazebo_sim.reset()
         #print('Get time')
         self.start_time = self.current_time = rospy.get_time()
