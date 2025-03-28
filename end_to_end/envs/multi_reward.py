@@ -48,8 +48,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self.prev_pos = Point(x=-2.0, y=3.0, z=0.0)
         self.prev_psi = 1.57
         self.prev_vel = 0
-        self.prev_local_goal = 0
-
+        self.prev_local_goal = Pose()
+        self.prev_local_goal.position.x = 0
+        self.prev_local_goal.position.y = 0
+        self.prev_local_goal.position.z = 0
         # if use_wandb:  # TODO: this should be in the main file
         #     wandb.log(
         #         {
@@ -512,13 +514,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         Reward for approaching the local goal
         """
         if not hasattr(self, 'prev_local_goal'):
-            self.prev_local_goal = local_goal
+            self.prev_local_goal = local_goal.copy()
             return 0
         
         # Compute distance to previous local goal
         prev_goal_rel = np.array([self.prev_local_goal.position.x - pos.x, self.prev_local_goal.position.y - pos.y])
         current_goal_rel = np.array([local_goal.position.x - pos.x, local_goal.position.y - pos.y])
-        
 
         local_goal_approach = np.linalg.norm(prev_goal_rel) - np.linalg.norm(current_goal_rel)
         
