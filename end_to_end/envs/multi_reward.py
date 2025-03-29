@@ -5,6 +5,7 @@ import numpy as np
 import wandb
 from geometry_msgs.msg import Point, Pose
 import random
+import rospy
 
 log_dir = "logs"  # TODO set this on the config file
 

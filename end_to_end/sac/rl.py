@@ -228,14 +228,14 @@ class CrossQ_SAC(object):
 
     def save(self, run_name):
         self.actor.to("cpu")
-        path_save_model = '/root/e2e_crossq/src/the-barn-challenge-CrossQ/end_to_end/trained_models'
+        path_save_model = '/home/bbruno/Documents/the-barn-challenge-CrossQ/end_to_end/trained_models'
         folder_path = join(path_save_model, run_name)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         
         files = os.listdir(folder_path)
         num_files = len(files)
-        checkpoint_filename = f"checkpoint_{num_files}"
+        checkpoint_filename = folder_path+f"/checkpoint_{num_files}.pth"
         
         state = {
             "actor_state_dict": self.actor.state_dict(),
@@ -257,7 +257,7 @@ class CrossQ_SAC(object):
         self.actor.to(self.device)
         
     def load(self, run_name, checkpoint_filename):
-        path_save_model = '/root/e2e_crossq/src/the-barn-challenge-CrossQ/end_to_end/trained_models'
+        path_save_model = '/home/bbruno/Documents/the-barn-challenge-CrossQ/end_to_end/trained_models'
         folder_path = join(path_save_model, run_name)
         checkpoint_full_path = join(folder_path, checkpoint_filename)
         if not os.path.isfile(checkpoint_full_path):
