@@ -264,7 +264,7 @@ def train(env_selector, env, policy, buffer, config):
         }
         
         if use_wandb:
-            wandb.log(log, step=n_steps)
+            wandb.log(log)
             
         log.update(loss_info)
         print(pformat(log))
@@ -272,7 +272,8 @@ def train(env_selector, env, policy, buffer, config):
         if n_iter % training_config["log_intervals"] == 0:
             for k in log.keys():
                 writer.add_scalar("train/" + k, log[k], global_step=n_steps)
-            policy.save(save_path, "last_policy")
+            #policy.save(save_path, "last_policy")
+            policy.save(wandb.run.name)
             print("Logging to %s" % save_path)
 
             for k in world_ep_buf.keys():
@@ -288,7 +289,7 @@ def train(env_selector, env, policy, buffer, config):
         # Change env for next iteration
         env, info = env_selector.get_env(success_rate=log["Success"])
         if use_wandb:
-            wandb.log(info, step=n_steps)
+            wandb.log(info)
         collector.set_env(env)
         
 
@@ -342,7 +343,9 @@ if __name__ == "__main__":
                     "safe_mode": config["training_config"]["safe_mode"],
                     "safe_lagr": config["training_config"]["safe_lagr"],
                     "policy_args": config["training_config"]["policy_args"],
-                    "training_args": config["training_config"]["training_args"],
+                    "collect_per_step": config["training_config"]["training_args"]["collect_per_step"],
+                    "update_per_step": config["training_config"]["training_args"]["update_per_step"],
+                    "batch_size": config["training_config"]["training_args"]["batch_size"],
                 },
             )
 

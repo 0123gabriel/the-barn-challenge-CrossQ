@@ -10,6 +10,8 @@ from sac.net import get_activation, MLP
 
 
 from os.path import join
+import datetime
+import os
 
 import torch.nn as nn
 
@@ -224,20 +226,60 @@ class CrossQ_SAC(object):
         total_norm = total_norm ** (1.0 / 2)
         return total_norm
 
-    def save(self, dir, filename):
+    def save(self, run_name):
         self.actor.to("cpu")
-        with open(join(dir, filename + "_actor"), "wb") as f:
-            pickle.dump(self.actor.state_dict(), f)
+        path_save_model = '/root/e2e_crossq/src/the-barn-challenge-CrossQ/end_to_end/trained_models'
+        folder_path = join(path_save_model, run_name)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        
+        files = os.listdir(folder_path)
+        num_files = len(files)
+        checkpoint_filename = f"checkpoint_{num_files}"
+        
+        state = {
+            "actor_state_dict": self.actor.state_dict(),
+            "critic_state_dict": self.critic.state_dict(),
+            "actor_optimizer_state_dict": self.actor_optim.state_dict(),
+            "critic_optimizer_state_dict": self.critic_optim.state_dict(),
+            "log_alpha": self.log_alpha,
+            "alpha_optimizer_state_dict": self.alpha_optimizer.state_dict(),
+            "gamma": self.gamma,
+            "policy_update_freq": self.target_update_freq,
+        }
+        
+        torch.save(state, checkpoint_filename)
+        
+        # with open(join(dir, filename + "_actor"), "wb") as f:
+        #     pickle.dump(self.actor.state_dict(), f)
         #with open(join(dir, filename + "_noise"), "wb") as f:
         #    pickle.dump(self.exploration_noise, f)
         self.actor.to(self.device)
+        
+    def load(self, run_name, checkpoint_filename):
+        path_save_model = '/root/e2e_crossq/src/the-barn-challenge-CrossQ/end_to_end/trained_models'
+        folder_path = join(path_save_model, run_name)
+        checkpoint_full_path = join(folder_path, checkpoint_filename)
+        if not os.path.isfile(checkpoint_full_path):
+            raise FileNotFoundError(f"Checkpoint file '{checkpoint_full_path}' does not exist.")
 
-    def load(self, dir, filename):
-        with open(join(dir, filename + "_actor"), "rb") as f:
-            self.actor.load_state_dict(pickle.load(f))
-            self.actor_target = copy.deepcopy(self.actor)
-        #with open(join(dir, filename + "_noise"), "rb") as f:
-        #    self.exploration_noise = pickle.load(f)
+        checkpoint = torch.load(checkpoint_full_path, map_location=self.device)
+        self.actor.load_state_dict(checkpoint["actor_state_dict"])
+        self.critic.load_state_dict(checkpoint["critic_state_dict"])
+        self.actor_optim.load_state_dict(checkpoint["actor_optimizer_state_dict"])
+        self.critic_optim.load_state_dict(checkpoint["critic_optimizer_state_dict"])
+        self.log_alpha = checkpoint["log_alpha"]
+        self.alpha_optimizer.load_state_dict(checkpoint["alpha_optimizer_state_dict"])
+        self.gamma = checkpoint["gamma"]
+        self.target_update_freq = checkpoint["policy_update_freq"]
+        self.actor.to(self.device)
+
+    # def load(self, dir, filename):
+    #     with open(join(dir, filename + "_actor"), "rb") as f:
+    #         self.actor.load_state_dict(pickle.load(f))
+    #         self.actor_target = copy.deepcopy(self.actor)
+    #     #with open(join(dir, filename + "_noise"), "rb") as f:
+    #     #    self.exploration_noise = pickle.load(f)
 
 
 class CrossQCritic(nn.Module):

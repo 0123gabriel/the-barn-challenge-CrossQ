@@ -51,18 +51,39 @@ class MotionControlContinuous(JackalGazebo):
         """reset the environment without setting the goal
         set_goal is replaced with make_plan
         """
+
         self.step_count = 0
         self.collision_count = 0
         # Reset robot in odom frame clear_costmap
         #self.gazebo_sim.reset()
-        if self.num_resets == 0:
-            self.gazebo_sim.reset_init_model_state(self.init_position)
-        else:
-            init_pos = [self.init_position[0] + np.random.uniform(-1, 1), 
+        x_offset = np.random.uniform(-1.5, 1.25)
+        if self.num_resets > 0:
+            init_pos = [self.init_position[0] + x_offset, 
                         self.init_position[1],
                         self.init_position[2]]
+            goal_pos = [self.goal_position[0] - x_offset, 
+                        self.goal_position[1],
+                        self.goal_position[2]]
+            
+            # goal_msg = PoseStamped()
+            # goal_msg.header.stamp = rospy.Time.now()
+            # goal_msg.header.frame_id = "map"  # Adjust based on your reference frame
+
+            # goal_msg.pose.position.x = goal_pos[0]
+            # goal_msg.pose.position.y = goal_pos[1]
+            # goal_msg.pose.position.z = goal_pos[2]
+
+            # # Assuming no orientation is given, setting it to a default (no rotation)
+            # goal_msg.pose.orientation.w = 1.0
+            self.move_base.reset_global_goal(goal_pos)
+            self.move_base.set_global_goal()
             self.gazebo_sim.reset_init_model_state(init_pos)
-        self.gazebo_sim.reset()
+            self.gazebo_sim.reset()
+            #self.init_position = init_pos
+            #self.goal_position = goal_pos
+            #self.move_base.move_base_goal_pub.publish(goal_msg)
+                    
+        
         #print('Get time')
         self.start_time = self.current_time = rospy.get_time()
         
@@ -84,6 +105,8 @@ class MotionControlContinuous(JackalGazebo):
         
         goal_pos = np.array([self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y])
         self.last_goal_pos = goal_pos
+        
+        self.num_resets += 1        
         return obs
 
     def _get_observation(self, pos, psi, action):

@@ -127,6 +127,7 @@ class MoveBase():
         #self.sub_gp = rospy.Subscriber("/move_base/" + self.base_local_planner + "/global_plan", Path, self.robot_config.get_global_path)
         self.sub_gp = rospy.Subscriber("/move_base/NavfnROS/plan", Path, self.robot_config.get_global_path)
         self._make_plan = rospy.ServiceProxy('/move_base/make_plan', GetPlan)
+        self.move_base_goal_pub = rospy.Publisher('move_base/simple/goal', PoseStamped, queue_size=1)
 
     def make_plan(self):
         # get_plan = GetPlan()

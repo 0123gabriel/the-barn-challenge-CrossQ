@@ -4,12 +4,13 @@ from envs.jackal_gazebo_envs import JackalGazeboLaser
 import numpy as np
 import wandb
 from geometry_msgs.msg import Point, Pose
+import random
 
 log_dir = "logs"  # TODO set this on the config file
 
 
 class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
-    def __init__(self, reward_function="mixed", use_wandb=True, **kwargs):
+    def __init__(self, reward_function="mixed", use_wandb=True, switch_schemes=False, **kwargs):
         super().__init__(**kwargs)
 
         self.use_wandb = use_wandb
@@ -22,6 +23,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "simple_local": self.simple_local_scheme
             # Add more reward functions as needed
         }
+        
+        self.switch_schemes = switch_schemes
 
         # Set the reward function based on the argument
         self.reward_scheme_name = reward_function
@@ -59,6 +62,72 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         #         }
         #     )
 
+    def reset(self):
+        """reset the environment without setting the goal
+        set_goal is replaced with make_plan
+        """
+
+        if self.switch_schemes:
+            random_key = random.choice(list(self.reward_functions.keys()))
+            self.switch_reward_function(random_key)
+
+        self.step_count = 0
+        self.collision_count = 0
+        # Reset robot in odom frame clear_costmap
+        #self.gazebo_sim.reset()
+        x_offset = np.random.uniform(-1.5, 1.25)
+        if self.num_resets > 0:
+            init_pos = [self.init_position[0] + x_offset, 
+                        self.init_position[1],
+                        self.init_position[2]]
+            goal_pos = [self.goal_position[0] - x_offset, 
+                        self.goal_position[1],
+                        self.goal_position[2]]
+            
+            # goal_msg = PoseStamped()
+            # goal_msg.header.stamp = rospy.Time.now()
+            # goal_msg.header.frame_id = "map"  # Adjust based on your reference frame
+
+            # goal_msg.pose.position.x = goal_pos[0]
+            # goal_msg.pose.position.y = goal_pos[1]
+            # goal_msg.pose.position.z = goal_pos[2]
+
+            # # Assuming no orientation is given, setting it to a default (no rotation)
+            # goal_msg.pose.orientation.w = 1.0
+            self.move_base.reset_global_goal(goal_pos)
+            self.move_base.set_global_goal()
+            self.gazebo_sim.reset_init_model_state(init_pos)
+            self.gazebo_sim.reset()
+            #self.init_position = init_pos
+            #self.goal_position = goal_pos
+            #self.move_base.move_base_goal_pub.publish(goal_msg)
+                    
+        
+        #print('Get time')
+        self.start_time = self.current_time = rospy.get_time()
+        
+        #print('Get pos')
+        pos, psi = self._get_pos_psi()
+        
+        # self.gazebo_sim.unpause()
+        #print('reset robot in odom')
+        self.move_base.reset_robot_in_odom()
+        #print('make plan')
+        self.move_base.make_plan()
+        #print('Clear ccostmap')
+        self._clear_costmap()
+        #print('get_observation')
+        obs = self._get_observation(0, 0, np.array([0, 0]))
+        local_goal, dist_local_goal = self.move_base.get_local_goal()
+        obs = np.concatenate((obs, np.array([local_goal.position.x, local_goal.position.y])))
+        # self.gazebo_sim.pause()
+        
+        goal_pos = np.array([self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y])
+        self.last_goal_pos = goal_pos
+        
+        self.num_resets += 1        
+        return obs
+
     def step(self, action):
         #print('STEP ===================================================================================================================')
         # step the simulation
@@ -75,13 +144,15 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # compute observation
         obs = self._get_observation(pos, psi, action)
         local_goal, dist_local_goal = self.move_base.get_local_goal()
-        
+        self.gazebo_sim.visualize_local_goals(local_goal.position.x, local_goal.position.y)
+        local_goal.position.x -= pos.x
+        local_goal.position.y -= pos.y
         obs = np.concatenate((obs, np.array([local_goal.position.x/1.5, local_goal.position.y/1.5]))) # this changes dimensions from 724 to 726, and 1.5 is to normalize (-1, 1)
         #print('Observation shape', obs.shape, '===================================================================================')
-        print("\033c", end="")  # Clear the terminal
-        print('Local goal: ', local_goal, '======================================================================================================')
-        print('Distance to local goal: ', dist_local_goal, '====================================================================================')
-        self.gazebo_sim.visualize_local_goals(local_goal.position.x, local_goal.position.y)
+        #print("\033c", end="")  # Clear the terminal
+        #print('Local goal: ', local_goal, '======================================================================================================')
+        #print('Distance to local goal: ', dist_local_goal, '====================================================================================')
+        
 
         # compute termination
         flip = pos.z > 0.1  # robot flip
