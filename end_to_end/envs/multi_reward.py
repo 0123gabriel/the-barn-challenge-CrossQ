@@ -169,7 +169,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
         truncation = self.step_count >= self.max_step  # Timeout
 
-        collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1
+        collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1 # TODO: Add a condition to reset the env if the robot is too far from the map
         # if collided:
         #     pass  # print('Collided ==================================================================================================')
         self.collision_count += int(collided)

@@ -6,7 +6,7 @@ env_config:
   stack_frame: 4   # span 1, 4, 8
   kwargs:
     world_name: "world_0.world"
-    gui: true
+    gui: false
     verbose: false
     max_step: 400
     time_step: 0.2
@@ -33,8 +33,8 @@ training_config:
   network: "mlp"
   encoder: "tcn"  # span "mlp", "cnn", "rnn", "transformer"
   buffer_size: 200000
-  actor_lr: 0.00001
-  critic_lr: 0.00002
+  actor_lr: 0.0003
+  critic_lr: 0.0001
   num_layers: 1
   hidden_layer_size: 512
   encoder_num_layers: 2

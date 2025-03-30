@@ -40,6 +40,6 @@
   <node pkg="jackal_helper" type="collision_publisher_node" name="collision_publisher_node" />
 
   <!-- Launch RViz -->
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find jackal_helper)/rviz/jackal_config.rviz" /> 
+  <!--<node pkg="rviz" type="rviz" name="rviz" args="-d $(find jackal_helper)/rviz/jackal_config.rviz" /> -->
 
 </launch>
