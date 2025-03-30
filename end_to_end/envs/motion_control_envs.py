@@ -75,13 +75,11 @@ class MotionControlContinuous(JackalGazebo):
 
             # # Assuming no orientation is given, setting it to a default (no rotation)
             # goal_msg.pose.orientation.w = 1.0
-            self.move_base.reset_global_goal(goal_pos)
-            self.move_base.set_global_goal()
             self.gazebo_sim.reset_init_model_state(init_pos)
             self.gazebo_sim.reset()
-            #self.init_position = init_pos
-            #self.goal_position = goal_pos
-            #self.move_base.move_base_goal_pub.publish(goal_msg)
+            #self.move_base.reset_global_goal(goal_pos)
+            #self.move_base.set_global_goal()
+            
                     
         
         #print('Get time')

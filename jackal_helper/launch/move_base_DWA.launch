@@ -16,5 +16,6 @@
     <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
 
     <remap from="odom" to="odometry/filtered" />
+    <remap from="/cmd_vel" to="/move_base_cmd_vel"/>
   </node>
 </launch>
