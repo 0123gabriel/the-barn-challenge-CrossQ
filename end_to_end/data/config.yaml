@@ -8,12 +8,12 @@ env_config:
     world_name: "world_0.world"
     gui: false
     verbose: false
-    max_step: 400
+    max_step: 90
     time_step: 0.2
     slack_reward: 0
-    collision_reward: -2
-    failure_reward: -5
-    success_reward: 2
+    collision_reward: -1
+    failure_reward: -2.5
+    success_reward: 1
     goal_reward: 1
     max_collision: 1
     init_position: [-2, 3, 1.57]
@@ -33,15 +33,16 @@ training_config:
   network: "mlp"
   encoder: "tcn"  # span "mlp", "cnn", "rnn", "transformer"
   buffer_size: 200000
-  actor_lr: 0.0003
-  critic_lr: 0.0001
+  actor_lr: 0.00003
+  critic_lr: 0.00001
+  alpha_lr: 0.0001
   num_layers: 1
   hidden_layer_size: 512
   encoder_num_layers: 2
   encoder_hidden_layer_size: 512
   exploration_noise_start: 0.1
   exploration_noise_end: 0.0999
-  pre_collect: 1000
+  pre_collect: 100
   log_intervals: 20
   validation: False
   val_interval: 1000000
@@ -64,12 +65,12 @@ training_config:
     #policy_noise: 0.2
     update_actor_freq: 2
     #noise_clip: 0.5
-    n_step: 4
+    n_step: 3
 
   training_args:
     max_step: 4000000
-    collect_per_step: 1000
-    update_per_step: 10
+    collect_per_step: 100
+    update_per_step: 250
     batch_size: 128
 
 condor_config:

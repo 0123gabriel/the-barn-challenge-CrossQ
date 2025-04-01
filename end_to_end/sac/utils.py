@@ -140,7 +140,7 @@ class ReplayBuffer(object):
             if self.safe_rl:
                 collision_reward.append(c)
 
-        next_state = torch.FloatTensor(next_state).to(self.device)
+        next_state = torch.FloatTensor(np.stack(next_state)).to(self.device)
         reward = torch.FloatTensor(reward).to(self.device)
         gammas = torch.FloatTensor(gammas).to(self.device)
         terminated = torch.FloatTensor(terminated).to(self.device)

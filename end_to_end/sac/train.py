@@ -179,6 +179,7 @@ def initialize_policy(config, env, init_buffer=True):
         critic=critic,
         critic_optim=critic_optim,
         action_range=[action_space_low, action_space_high],
+        alpha_lr=training_config["alpha_lr"],
         device=device, **training_config["policy_args"],  # TODO: review this
     )
 
@@ -236,7 +237,7 @@ def train(env_selector, env, policy, buffer, config):
         n_ep += len(epinfo)
         epinfo_buf.extend(epinfo)
         for d in epinfo:
-            print(d["world"])
+            #print(d["world"])
             world = d["world"] #.split("/")[-1]
             world_ep_buf[world].append(d)
 
@@ -264,6 +265,7 @@ def train(env_selector, env, policy, buffer, config):
         }
         
         if use_wandb:
+            log["n_iter"] = n_iter
             wandb.log(log)
             
         log.update(loss_info)
@@ -323,6 +325,7 @@ if __name__ == "__main__":
                     "buffer_size": config["training_config"]["buffer_size"],
                     "actor_lr": config["training_config"]["actor_lr"],
                     "critic_lr": config["training_config"]["critic_lr"],
+                    "alpha_lr": config["training_config"]["alpha_lr"],
                     "num_layers": config["training_config"]["num_layers"],
                     "hidden_layer_size": config["training_config"]["hidden_layer_size"],
                     "encoder_num_layers": config["training_config"]["encoder_num_layers"],

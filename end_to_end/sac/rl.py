@@ -27,7 +27,7 @@ class CrossQ_SAC(object):
         device="cpu",
         gamma=0.99,  # policy_arg
         tau=5e-3,  # policy_arg
-        alpha_lr=0.005,  # policy_arg
+        alpha_lr=5e-4,  # policy_arg
         n_step=4,  # policy_arg
         update_actor_freq=2,  # policy_arg
     ):
@@ -44,7 +44,10 @@ class CrossQ_SAC(object):
         self.rewards_scale = 1.0
         self.target_update_freq = update_actor_freq
 
-        self.target_entropy = -torch.prod(torch.Tensor(action_range)).to(self.device)
+        #self.target_entropy = torch.tensor(-2.0, dtype=torch.float32, device=self.device) #-torch.prod(torch.Tensor(action_range)).to(self.device)
+        self.target_entropy = -torch.prod(torch.tensor(np.array(action_range).shape[-1], dtype=torch.float32, device=self.device))
+        #print('Target Entropy : ', self.target_entropy, '=======================================================================')
+        #print('Target Entropy 1: ', self.target_entropy_1, '=======================================================================')
         init_temperature = 1.0
 
         self.log_alpha = torch.tensor(
@@ -183,6 +186,7 @@ class CrossQ_SAC(object):
         return {
             "Actor_grad_norm": self.grad_norm(self.actor),
             "Critic_grad_norm": self.grad_norm(self.critic),
+            "Alpha_grad_norm": self.log_alpha.grad.norm().item() if self.log_alpha.grad is not None else 0,
             "Actor_loss": policy_loss.cpu().detach().numpy(),
             "Total_critic_loss": total_q_loss.cpu().detach().numpy(),
             "q_values_1": q_values_1.mean().item(),
@@ -194,7 +198,7 @@ class CrossQ_SAC(object):
             "entropy_loss": entropy_loss.cpu().detach().numpy(),
             "log_alpha": self.log_alpha.cpu().detach().numpy(),
             "alpha": self.log_alpha.exp().cpu().detach().numpy(),
-            "log_probs": log_probs.cpu().detach().numpy(),
+            "log_probs": log_probs.mean().cpu().detach().numpy(),
             "entropy": -log_probs.mean().cpu().detach().numpy(),
         }
 
