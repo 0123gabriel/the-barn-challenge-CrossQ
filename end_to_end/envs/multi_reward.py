@@ -136,7 +136,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         
         
         next_pos_x, next_pos_y, next_psi = self.get_next_pos_psi(action, pos, psi)
-        self.gazebo_sim.visualize_next_pos_psi(local_goal.position.x, local_goal.position.y)
+        self.gazebo_sim.visualize_next_pos_psi(next_pos_x, next_pos_y, next_psi)
         
         # compute termination
         flip = pos.z > 0.1  # robot flip
