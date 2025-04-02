@@ -7,6 +7,7 @@ import re
 import pickle
 import shutil
 import os
+import wandb
 
 
 BUFFER_PATH = os.getenv('BUFFER_PATH')
@@ -21,6 +22,7 @@ class LocalCollector(object):
         
         self.global_episodes = 0
         self.global_steps = 0
+        self.use_wandb = use_wandb
     
     def collect(self, n_steps):
         #print('Collect first line')
@@ -64,7 +66,7 @@ class LocalCollector(object):
                             truncated, terminated,
                             world)
             
-            if use_wandb:
+            if self.use_wandb:
                 wandb.log(info)
             
             if terminated or truncated:
