@@ -201,6 +201,19 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     # def _time_penalty(self, max_step):
         # return -1 / max_step
 
+    def get_next_pos_psi(self, action, pos, psi):
+        
+        if action[1] == 0:  # Straight-line motion
+            x_new = pos.x + action[1] * np.cos(psi) * self.time_step
+            y_new = pos.y + action[1] * np.sin(psi) * self.time_step
+            theta_new = psi
+        else:  # Arc motion
+            x_new = pos.x + (action[0] / action[1]) * (np.sin(psi + action[1] * self.time_step) - np.sin(psi))
+            y_new = pos.y - (action[0] / action[1]) * (np.cos(psi + action[1] * self.time_step) - np.cos(psi))
+            theta_new = psi + action[1] * self.time_step
+            
+        return x_new, y_new, theta_new
+
     def local_focused_scheme(
         self,
         prev_vel,
