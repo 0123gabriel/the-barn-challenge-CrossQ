@@ -240,6 +240,8 @@ def train(env_selector, env, policy, buffer, config):
             #print(d["world"])
             world = d["world"] #.split("/")[-1]
             world_ep_buf[world].append(d)
+            if use_wandb:
+                wandb.log(d)
 
         loss_infos = []
         for training_steps in range(training_args["update_per_step"]):

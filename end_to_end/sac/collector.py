@@ -69,7 +69,9 @@ class LocalCollector(object):
                 info1 = dict(
                     ep_rew=ep_rew,
                     ep_len=ep_len,
-                    world=world
+                    world=world,
+                    global_steps=self.global_steps,
+                    global_episodes=self.global_episodes, 
                 )
                 
                 joined_info = {**info1, **info}
