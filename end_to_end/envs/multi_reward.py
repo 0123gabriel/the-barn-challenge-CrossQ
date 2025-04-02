@@ -120,7 +120,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi()  # Returns the position in the world frame
-        # print('Position: ', pos, 'Orientation: ', psi, '\n')
+        print('Position: ', pos, 'Orientation: ', psi, '\n')
         vel = self.gazebo_sim.get_velocity()
 
         if self.use_wandb:
