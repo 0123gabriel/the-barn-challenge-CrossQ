@@ -86,7 +86,7 @@ class LocalCollector(object):
                 ep_len = 0
                 self.global_episodes += 1
                 
-                if use_wandb:
+                if self.use_wandb:
                     wandb.log(joined_info)
                 
             print("n_episode: %d, n_steps: %d" %(self.global_episodes, self.global_steps), end="\r")

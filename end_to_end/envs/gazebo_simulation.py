@@ -45,6 +45,7 @@ class GazeboSimulation():
         self._cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self.marker_global_goal_pub = rospy.Publisher('/global_goal_marker', Marker, queue_size=10)
         self.marker_local_goal_pub = rospy.Publisher('/local_goal_marker', Marker, queue_size=10)
+        self.marker_next_pos_pub = rospy.Publisher('/next_pos_psi_marker', Marker, queue_size=10)
         self.real_vel = 0
     
     def pub_velocity(self, vel):
@@ -102,6 +103,38 @@ class GazeboSimulation():
         marker.color = ColorRGBA(r=0.5, b=0.0, a=1.0)
         marker.lifetime = rospy.Duration()
         self.marker_local_goal_pub.publish(marker)
+        
+    def visualize_next_pos_psi(self, x, y, theta):
+
+        marker = Marker()
+        marker.header.stamp = rospy.Time.now()
+        marker.header.frame_id = '/odom'
+        marker.ns = 'robot_next_position'
+        marker.id = 2
+        marker.type = Marker.ARROW
+        marker.action = Marker.ADD
+        marker.pose.position.x = x
+        marker.pose.position.y = y
+        marker.pose.position.z = 0 
+        quaternion = self.yaw_to_quaternion(theta)
+        marker.pose.orientation = quaternion
+        marker.scale = Vector3(x=0.5, y=0.1, z=0.1)  # Arrow length and thickness
+        marker.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
+        marker.lifetime = rospy.Duration()  # Persistent marker
+        self.marker_next_pos_pub.publish(marker)
+
+    def yaw_to_quaternion(self, yaw):
+        """
+        Converts a yaw angle (theta) to a quaternion for proper marker orientation.
+        """
+        half_yaw = yaw / 2.0
+        return Quaternion(
+            x=0.0,
+            y=0.0,
+            z=np.sin(half_yaw),
+            w=np.cos(half_yaw)
+        )
+        
     
     def get_velocity(self):
         return self.real_vel

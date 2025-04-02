@@ -134,6 +134,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         local_goal.position.y -= pos.y
         obs = np.concatenate((obs, np.array([local_goal.position.x/1.5, local_goal.position.y/1.5]))) # this changes dimensions from 724 to 726, and 1.5 is to normalize (-1, 1)
         
+        
+        next_pos_x, next_pos_y, next_psi = self.get_next_pos_psi(action, pos, psi)
+        self.gazebo_sim.visualize_next_pos_psi(local_goal.position.x, local_goal.position.y)
+        
         # compute termination
         flip = pos.z > 0.1  # robot flip
 
