@@ -242,8 +242,12 @@ def train(env_selector, env, policy, buffer, config):
             world_ep_buf[world].append(d)
 
         loss_infos = []
-        for _ in range(training_args["update_per_step"]):
+        for training_steps in range(training_args["update_per_step"]):
             loss_info = policy.train(buffer, training_args["batch_size"])
+            loss_info["n_steps"] = n_steps
+            loss_info["n_iter"] = n_iter
+            loss_info["n_ep"] = n_ep
+            loss_info["training_steps"] = training_steps
             if use_wandb:
                 wandb.log(loss_info)
             loss_infos.append(loss_info)

@@ -163,7 +163,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         termination = flip or success or self.collision_count >= self.max_collision or self.collision_with_lidar()
         # rew = 1
 
-        rew = self.reward_func(
+        rew, rew_info = self.reward_func(
             self.prev_vel,
             vel,
             pos,
@@ -177,18 +177,17 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             local_goal
         )  #! Improve once reward schemes are implemented
 
-        
         #print("distance_to_goal:", np.linalg.norm(global_goal_pos))
         #print("global_goal_x:", global_goal_pos[0], "global_goal_y:", global_goal_pos[1])
 
-        if self.use_wandb:
-            wandb.log(
-                {
-                    "reward": rew,
-                    self.reward_scheme_name: rew,
-                    "distance_to_goal": np.linalg.norm(global_goal_pos),
-                }
-            )
+        # if self.use_wandb:
+        #     wandb.log(
+        #         {
+        #             "reward": rew,
+        #             self.reward_scheme_name: rew,
+        #             "distance_to_goal": np.linalg.norm(global_goal_pos),
+        #         }
+        #     )
 
         self.last_goal_pos = global_goal_pos
 
@@ -197,7 +196,13 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self.prev_psi = psi
         self.prev_vel = vel
 
+        # Encode the reward function name into a number from 1 to 6
+        encoded_number = list(self.reward_functions.keys()).index(self.reward_scheme_name) + 1
+
         info = dict(
+            reward=rew,
+            ep_step=self.step_count,
+            distance_to_goal=np.linalg.norm(global_goal_pos),
             collision=self.collision_count,
             collided=collided,
             goal_position=global_goal_pos,
@@ -205,7 +210,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             success=success,
             world=self.world_name,
             reward_function=self.reward_scheme_name,
+            reward_function_numeric=encoded_number,
         )
+        info.update(rew_info)
 
         if truncation or termination:
             bn, nn = self.gazebo_sim.get_bad_vel_num()
@@ -251,20 +258,32 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             r_final = self.failure_reward
                 
         # Log reward components if using wandb
-        if self.use_wandb:
-            wandb.log({
-                "local_focused/smoothness_reward": r_smooth,
-                "local_focused/time_penalty": r_time,
-                "local_focused/local_goal_reward": r_local_goal,
-                "local_focused/obstacle_distance": r_obs_dist,
-                "local_focused/terminal_reward": r_final
-            })
+        # if self.use_wandb:
+        #     wandb.log({
+        #         "local_focused/smoothness_reward": r_smooth,
+        #         "local_focused/time_penalty": r_time,
+        #         "local_focused/local_goal_reward": r_local_goal,
+        #         "local_focused/obstacle_distance": r_obs_dist,
+        #         "local_focused/terminal_reward": r_final
+        #     })
+        
+        
+        total_reward = r_smooth + r_time + r_local_goal + r_obs_dist + r_final
+                
+        rew_info = {
+            "reward/smoothness_reward": r_smooth,
+            "reward/time_penalty": r_time,
+            "reward/local_goal_reward": r_local_goal,
+            "reward/obstacle_distance": r_obs_dist,
+            "reward/terminal_reward": r_final,
+            "reward/local_focused_reward_total": total_reward
+        }
                 
         # Update previous local goal for next iteration
         self.prev_local_goal = local_goal
                 
         # Return total reward
-        return r_smooth + r_time + r_local_goal + r_obs_dist + r_final
+        return total_reward, rew_info
     
     def simple_local_scheme(
         self,
@@ -292,16 +311,26 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         if truncation:
             r_final += self.failure_reward
             
-        if self.use_wandb:
-            wandb.log({
-                "simple_local/local_goal_reward": r_local,
-                "simple_local/speed_reward": r_speed,
-                "simple_local/stop_reward": r_stop,
-                "simple_local/terminal_reward": r_final,
-                "simple_local/total_reward": r_local + r_final + r_stop + r_speed
-            })
+        # if self.use_wandb:
+        #     wandb.log({
+        #         "simple_local/local_goal_reward": r_local,
+        #         "simple_local/speed_reward": r_speed,
+        #         "simple_local/stop_reward": r_stop,
+        #         "simple_local/terminal_reward": r_final,
+        #         "simple_local/total_reward": r_local + r_final + r_stop + r_speed
+        #     })
+        
+        total_reward = r_local + r_final + r_stop + r_speed
+        
+        rew_info = {
+            "reward/local_goal_reward": r_local,
+            "reward/speed_reward": r_speed,
+            "reward/stop_reward": r_stop,
+            "reward/terminal_reward": r_final,
+            "reward/simple_local_total_reward": total_reward
+        }
 
-        return r_local + r_final + r_stop + r_speed
+        return total_reward, rew_info
     
     def simple_reward_scheme(
         self,
@@ -332,16 +361,22 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         if truncation:
             r_final += self.failure_reward
 
-        if self.use_wandb:
-            wandb.log(
-                {
-                    "simple_reward/progress": r_simple,
-                    "simple_reward/terminal_reward": r_final,
-                    "simple_reward/total_reward": r_simple + r_final
-                }
-            )
-
-        return r_simple + r_final
+        # if self.use_wandb:
+        #     wandb.log(
+        #         {
+        #             "simple_reward/progress": r_simple,
+        #             "simple_reward/terminal_reward": r_final,
+        #             "simple_reward/total_reward": r_simple + r_final
+        #         }
+        #     )
+            
+        total_reward = r_simple + r_final
+        rew_info = {
+            "reward/simple_reward/progress": r_simple,
+            "reward/terminal_reward": r_final,
+            "reward/simple_reward_total_reward": total_reward
+        }
+        return total_reward, rew_info
 
     def smooth_reward_scheme(
         self,
@@ -378,18 +413,30 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         elif truncation:
             r_final = self.failure_reward
 
-        if self.use_wandb:
-            wandb.log(
-                {
-                    "smooth_reward/time_penalty": r_time,
-                    "smooth_reward/smoothness_reward": r_smooth,
-                    "smooth_reward/speed_reward": r_speed,
-                    "smooth_reward/approach_reward": r_approach,
-                    "smooth_reward/termination_reward": r_final,
-                }
-            )
+        # if self.use_wandb:
+        #     wandb.log(
+        #         {
+        #             "smooth_reward/time_penalty": r_time,
+        #             "smooth_reward/smoothness_reward": r_smooth,
+        #             "smooth_reward/speed_reward": r_speed,
+        #             "smooth_reward/approach_reward": r_approach,
+        #             "smooth_reward/termination_reward": r_final,
+        #         }
+        #     )
+        
+        total_reward = (
+            r_time + r_smooth + r_speed + r_approach + r_final
+        )
+        rew_info = {
+            "reward/time_penalty": r_time,
+            "reward/smoothness_reward": r_smooth,
+            "reward/speed_reward": r_speed,
+            "reward/approach_reward": r_approach,
+            "reward/termination_reward": r_final,
+            "reward/smooth_reward_total_reward": total_reward
+        }
 
-        return r_time + r_smooth + r_speed + r_approach + r_final
+        return total_reward, rew_info
 
     def lidar_based_scheme(
         self,
@@ -430,19 +477,37 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         elif truncation:
             r_final = self.failure_reward
 
-        if self.use_wandb:
-            wandb.log(
-                {
-                    "lidar/stop_reward": r_stop,
-                    "lidar/straight_reward": r_straight,
-                    "lidar/speed_reward": r_speed_simple,
-                    "lidar/obstacle_distance_reward": r_obs_dist,
-                    "lidar/termination_reward": r_final,
-                    "lidar/global_goal_reward": r_goal_reward,
-                }
-            )
-
-        return r_stop + r_straight + r_speed_simple + r_obs_dist + r_final + r_goal_reward
+        # if self.use_wandb:
+        #     wandb.log(
+        #         {
+        #             "lidar/stop_reward": r_stop,
+        #             "lidar/straight_reward": r_straight,
+        #             "lidar/speed_reward": r_speed_simple,
+        #             "lidar/obstacle_distance_reward": r_obs_dist,
+        #             "lidar/termination_reward": r_final,
+        #             "lidar/global_goal_reward": r_goal_reward,
+        #         }
+        #     )
+        
+        total_reward = (
+            r_stop
+            + r_straight
+            + r_speed_simple
+            + r_obs_dist
+            + r_final
+            + r_goal_reward
+        )
+        rew_info = {
+            "reward/stop_reward": r_stop,
+            "reward/straight_reward": r_straight,
+            "reward/speed_reward": r_speed_simple,
+            "reward/obstacle_distance_reward": r_obs_dist,
+            "reward/termination_reward": r_final,
+            "reward/global_goal_reward": r_goal_reward,
+            "reward/lidar_total_reward": total_reward
+        }
+        
+        return total_reward, rew_info
 
     def mixed_scheme(
         self,
@@ -486,20 +551,20 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         elif truncation:
             r_final = self.failure_reward
 
-        if self.use_wandb:
-            wandb.log(
-                {
-                    "mixed/simple_reward": r_simple,  # done
-                    "mixed/time_penalty": r_time,  # done
-                    "mixed/smoothness_reward": r_smooth,  # done
-                    "mixed/speed_reward": r_speed,  # done
-                    "mixed/approach_reward": r_approach,
-                    "mixed/stop_reward": r_stop,  # done
-                    "mixed/straight_reward": r_straight,
-                    "mixed/obstacle_distance": r_obs_dist,  # done
-                    "mixed/termination_reward": r_final,
-                }
-            )
+        # if self.use_wandb:
+        #     wandb.log(
+        #         {
+        #             "mixed/simple_reward": r_simple,  # done
+        #             "mixed/time_penalty": r_time,  # done
+        #             "mixed/smoothness_reward": r_smooth,  # done
+        #             "mixed/speed_reward": r_speed,  # done
+        #             "mixed/approach_reward": r_approach,
+        #             "mixed/stop_reward": r_stop,  # done
+        #             "mixed/straight_reward": r_straight,
+        #             "mixed/obstacle_distance": r_obs_dist,  # done
+        #             "mixed/termination_reward": r_final,
+        #         }
+        #     )
 
         total_reward = (
             r_simple
@@ -512,7 +577,21 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             + r_obs_dist
             + r_final
         )
-        return total_reward
+        
+        rew_info = {
+            "reward/simple_reward/progress": r_simple,
+            "reward/time_penalty": r_time,
+            "reward/smoothness_reward": r_smooth,
+            "reward/speed_reward": r_speed,
+            "reward/approach_reward": r_approach,
+            "reward/stop_reward": r_stop,
+            "reward/straight_reward": r_straight,
+            "reward/obstacle_distance_reward": r_obs_dist,
+            "reward/termination_reward": r_final,
+            "reward/mixed_total_reward": total_reward
+        }
+        
+        return total_reward, rew_info
 
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi):
         """
