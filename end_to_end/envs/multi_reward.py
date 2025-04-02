@@ -637,22 +637,17 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # print(min_distance)
         return -1 / (min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
 
-    def _local_goal_approach(self, local_goal, pos):
+    def _local_goal_approach(self, local_goal, action, pos, psi):
         """
         Reward for approaching the local goal
         """
-        if not hasattr(self, 'prev_local_goal'):
-            self.prev_local_goal = local_goal.copy()
-            return 0
         
-        # Compute distance to previous local goal
-        prev_goal_rel = np.array([self.prev_local_goal.position.x - pos.x, self.prev_local_goal.position.y - pos.y])
-        current_goal_rel = np.array([local_goal.position.x - pos.x, local_goal.position.y - pos.y])
-
-        local_goal_approach = np.linalg.norm(prev_goal_rel) - np.linalg.norm(current_goal_rel)
+        next_x, next_y, next_psi = self.get_next_pos_psi(action, pos, psi)
+        curr_dist = np.linalg.norm(np.array([local_goal.position.x - pos.x, local_goal.position.y - pos.y]))
+        next_dist = np.linalg.norm(np.array([local_goal.position.x - next_x, local_goal.position.y - next_y]))
         
         # Provide reward proportional to how much closer we got
-        reward = 0.06 * local_goal_approach
+        reward = 0.1 * (curr_dist - next_dist)
 
         # # Log to wandb if enabled
         # if self.use_wandb:
