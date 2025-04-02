@@ -12,7 +12,7 @@ import os
 BUFFER_PATH = os.getenv('BUFFER_PATH')
 
 class LocalCollector(object):
-    def __init__(self, policy, env, replaybuffer):
+    def __init__(self, policy, env, replaybuffer, use_wandb=False):
         self.policy = policy
         self.env = env
         self.buffer = replaybuffer
@@ -64,6 +64,9 @@ class LocalCollector(object):
                             truncated, terminated,
                             world)
             
+            if use_wandb:
+                wandb.log(info)
+            
             if terminated or truncated:
                 obs = env.reset()
                 info1 = dict(
@@ -80,7 +83,12 @@ class LocalCollector(object):
                 ep_rew = 0
                 ep_len = 0
                 self.global_episodes += 1
+                
+                if use_wandb:
+                    wandb.log(joined_info)
+                
             print("n_episode: %d, n_steps: %d" %(self.global_episodes, self.global_steps), end="\r")
+            
         self.last_obs = obs
         return n_steps_curr, results
     

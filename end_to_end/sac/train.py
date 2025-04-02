@@ -209,7 +209,7 @@ def train(env_selector, env, policy, buffer, config):
     save_path, writer = initialize_logging(config)
     print("    >>>> initialized logging")
     
-    collector = LocalCollector(policy, env, buffer)
+    collector = LocalCollector(policy, env, buffer, use_wandb=use_wandb)
 
     training_args = training_config["training_args"]
     
@@ -240,8 +240,7 @@ def train(env_selector, env, policy, buffer, config):
             #print(d["world"])
             world = d["world"] #.split("/")[-1]
             world_ep_buf[world].append(d)
-            if use_wandb:
-                wandb.log(d)
+
 
         loss_infos = []
         for training_steps in range(training_args["update_per_step"]):
