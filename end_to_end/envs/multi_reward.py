@@ -115,8 +115,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return obs
 
     def step(self, action):
-        #print('STEP ===================================================================================================================')
-        # step the simulation
+        
         self._take_action(action)
         self.step_count += 1
         pos, psi = self._get_pos_psi()  # Returns the position in the world frame
@@ -134,12 +133,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         local_goal.position.x -= pos.x
         local_goal.position.y -= pos.y
         obs = np.concatenate((obs, np.array([local_goal.position.x/1.5, local_goal.position.y/1.5]))) # this changes dimensions from 724 to 726, and 1.5 is to normalize (-1, 1)
-        #print('Observation shape', obs.shape, '===================================================================================')
-        #print("\033c", end="")  # Clear the terminal
-        #print('Local goal: ', local_goal, '======================================================================================================')
-        #print('Distance to local goal: ', dist_local_goal, '====================================================================================')
         
-
         # compute termination
         flip = pos.z > 0.1  # robot flip
 
@@ -148,17 +142,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         )
 
         success = np.linalg.norm(global_goal_pos) < 0.5
-        # print('Norm to the goal: ', np.linalg.norm(global_goal_pos))
-        # print('X pos: ', pos.x)
-        # print('Y pos: ', pos.y)
 
         truncation = self.step_count >= self.max_step  # Timeout
 
         collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1 # TODO: Add a condition to reset the env if the robot is too far from the map
-        # if collided:
-        #     pass  # print('Collided ==================================================================================================')
+
         self.collision_count += int(collided)
-        # print(self.collision_count)
 
         termination = flip or success or self.collision_count >= self.max_collision or self.collision_with_lidar()
         # rew = 1
@@ -176,18 +165,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             global_goal_pos,
             local_goal
         )  #! Improve once reward schemes are implemented
-
-        #print("distance_to_goal:", np.linalg.norm(global_goal_pos))
-        #print("global_goal_x:", global_goal_pos[0], "global_goal_y:", global_goal_pos[1])
-
-        # if self.use_wandb:
-        #     wandb.log(
-        #         {
-        #             "reward": rew,
-        #             self.reward_scheme_name: rew,
-        #             "distance_to_goal": np.linalg.norm(global_goal_pos),
-        #         }
-        #     )
 
         self.last_goal_pos = global_goal_pos
 

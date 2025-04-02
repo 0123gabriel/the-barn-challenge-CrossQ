@@ -321,7 +321,7 @@ if __name__ == "__main__":
 
     if use_wandb:  # TODO: this should be in the main file
             wandb.init(
-                project="BARN_CrossQ",
+                project="barn_crossq_logs",
                 config={
                     "algorithm": config["training_config"]["algorithm"],
                     "network": config["training_config"]["network"],
