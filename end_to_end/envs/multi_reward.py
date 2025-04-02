@@ -85,24 +85,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
                         self.goal_position[1],
                         self.goal_position[2]]
             
-            # goal_msg = PoseStamped()
-            # goal_msg.header.stamp = rospy.Time.now()
-            # goal_msg.header.frame_id = "map"  # Adjust based on your reference frame
-
-            # goal_msg.pose.position.x = goal_pos[0]
-            # goal_msg.pose.position.y = goal_pos[1]
-            # goal_msg.pose.position.z = goal_pos[2]
-
-            # # Assuming no orientation is given, setting it to a default (no rotation)
-            # goal_msg.pose.orientation.w = 1.0
             self.gazebo_sim.reset_init_model_state(init_pos)
             self.gazebo_sim.reset()
             self.move_base.reset_global_goal(goal_pos)
-            #self.move_base.set_global_goal()
-            #self.init_position = init_pos
-            #self.goal_position = goal_pos
-            #self.move_base.move_base_goal_pub.publish(goal_msg)
-                    
         
         #print('Get time')
         self.start_time = self.current_time = rospy.get_time()
