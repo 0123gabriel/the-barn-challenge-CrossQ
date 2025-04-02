@@ -664,9 +664,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # Provide reward proportional to how much closer we got
         reward = 0.06 * local_goal_approach
 
-        # Log to wandb if enabled
-        if self.use_wandb:
-            wandb.log({"local_goal_approach": local_goal_approach, "local_goal_reward": reward})
+        # # Log to wandb if enabled
+        # if self.use_wandb:
+        #     wandb.log({"local_goal_approach": local_goal_approach, "local_goal_reward": reward})
 
         return reward
 
