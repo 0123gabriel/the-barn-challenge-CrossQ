@@ -43,9 +43,9 @@ class GazeboSimulation():
         self.real_vel_sub = rospy.Subscriber("/jackal_velocity_controller/odom", Odometry, self.real_vel_monitor)
         #self._local_goal_sub = rospy.Subscriber('/move_base/TrajectoryPlannerROS/local_plan', Path, self.current_goal_pos)
         self._cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
-        self.marker_global_goal_pub = rospy.Publisher('/global_goal_marker', Marker, queue_size=10)
-        self.marker_local_goal_pub = rospy.Publisher('/local_goal_marker', Marker, queue_size=10)
-        self.marker_next_pos_pub = rospy.Publisher('/next_pos_psi_marker', Marker, queue_size=10)
+        self.marker_global_goal_pub = rospy.Publisher('/global_goal_marker', Marker, queue_size=1)
+        self.marker_local_goal_pub = rospy.Publisher('/local_goal_marker', Marker, queue_size=1)
+        self.marker_next_pos_pub = rospy.Publisher('/next_pos_psi_marker', Marker, queue_size=1)
         self.real_vel = 0
     
     def pub_velocity(self, vel):

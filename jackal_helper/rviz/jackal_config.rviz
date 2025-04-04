@@ -8,8 +8,6 @@ Panels:
         - /Status1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /Marker1
-        - /Marker2
       Splitter Ratio: 0.5
     Tree Height: 629
   - Class: rviz/Selection
@@ -247,7 +245,7 @@ Visualization Manager:
       Marker Topic: /global_goal_marker
       Name: Marker
       Namespaces:
-        robot_local_goal: true
+        {}
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -296,7 +294,7 @@ Visualization Manager:
       Marker Topic: /local_goal_marker
       Name: Marker
       Namespaces:
-        robot_local_goal: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -322,6 +320,34 @@ Visualization Manager:
       Topic: /move_base/NavfnROS/plan
       Unreliable: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /next_pos_psi_marker
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: false
+      Name: Map
+      Topic: /move_base/global_costmap/costmap
+      Unreliable: false
+      Use Timestamp: false
+      Value: false
+    - Alpha: 0.699999988079071
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: false
+      Name: Map
+      Topic: /move_base/local_costmap/costmap
+      Unreliable: false
+      Use Timestamp: false
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -350,7 +376,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.2766709327697754
+      Distance: 8.20918083190918
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -365,10 +391,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.3281902074813843
+      Pitch: 1.0781904458999634
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.8473687171936035
+      Yaw: 4.9973673820495605
     Saved: ~
 Window Geometry:
   Displays:
@@ -386,5 +412,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1462
-  X: 295
-  Y: 112
+  X: 269
+  Y: 27
