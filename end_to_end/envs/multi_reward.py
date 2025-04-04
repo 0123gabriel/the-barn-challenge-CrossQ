@@ -23,7 +23,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "mixed": self.mixed_scheme,
             "local": self.local_focused_scheme,
             "simple_local": self.simple_local_scheme
-            # Add more reward functions as needed
         }
         
         self.switch_schemes = switch_schemes
@@ -38,46 +37,24 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             )
 
         self.max_vel = self.range_dict["linear_velocity"][1]
-        # self.success_reward = 0
-        # self.collision_reward = 0
-        # self.goal_reward = 1
-        # self.max_collision = 10000
-        # self.max_step = 100
-        # self.time_step = 1
-        # self.verbose = True
-        # self.world_frame_goal = (
-        #     self.init_position[0] + self.goal_position[0],
-        #     self.init_position[1] + self.goal_position[1],
-        # )
 
-        self.prev_pos = Point(x=-2.0, y=3.0, z=0.0)
-        self.prev_psi = 1.57
+        self.prev_pos = None
+        self.prev_psi = None
         self.prev_vel = 0
-        self.prev_local_goal = Pose()
-        self.prev_local_goal.position.x = 0
-        self.prev_local_goal.position.y = 0
-        self.prev_local_goal.position.z = 0
-        # if use_wandb:  # TODO: this should be in the main file
-        #     wandb.log(
-        #         {
-        #             "reward_scheme": self.reward_scheme_name,
-        #         }
-        #     )
+        self.prev_local_goal = None
         self.x_offset = 0
 
     def reset(self):
-        """reset the environment without setting the goal
-        set_goal is replaced with make_plan
+        """
+        reset the environment
         """
 
         if self.switch_schemes:
             random_key = random.choice(list(self.reward_functions.keys()))
             self.switch_reward_function(random_key)
-
+        
         self.step_count = 0
         self.collision_count = 0
-        # Reset robot in odom frame clear_costmap
-        #self.gazebo_sim.reset()
         
         if self.num_resets > 0:
             self.x_offset = np.random.uniform(-1.5, 1.25)
@@ -85,7 +62,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             init_pos = [self.init_position[0] + self.x_offset, 
                         self.init_position[1],
                         self.init_position[2]]
-            #self.init_position = init_pos
             
             goal_pos = [self.goal_position[0] - self.x_offset, 
                         self.goal_position[1],
@@ -94,26 +70,22 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             self.gazebo_sim.reset_init_model_state(init_pos)
             self.gazebo_sim.reset()
             self.move_base.reset_global_goal(goal_pos)
-            self.move_base.set_global_goal()
+            # self.move_base.set_global_goal() (unccoment to use move_base)
         
-        #print('Get time')
         self.start_time = self.current_time = rospy.get_time()
         
-        #print('Get pos')
-        pos, psi = self._get_pos_psi()
         
-        # self.gazebo_sim.unpause()
-        #print('reset robot in odom')
         self.move_base.reset_robot_in_odom()
-        #print('make plan')
+        
+        pos, psi = self._get_pos_psi()
+        self.prev_pos = pos
+        self.prev_psi = psi
+        
         self.move_base.make_plan()
-        #print('Clear ccostmap')
         self._clear_costmap()
-        #print('get_observation')
         obs = self._get_observation(0, 0, np.array([0, 0]))
         local_goal, dist_local_goal = self.move_base.get_local_goal()
         obs = np.concatenate((obs, np.array([local_goal.position.x, local_goal.position.y])))
-        # self.gazebo_sim.pause()
         
         goal_pos = np.array([self.world_frame_goal[0] - pos.x, self.world_frame_goal[1] - pos.y])
         self.last_goal_pos = goal_pos
@@ -484,7 +456,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # print(r)
         
         # Can't remember if this is necessary
-        r_goal_reward = self._global_goal_dist_reward(global_goal_pos)
+        r_goal_reward = self._global_goal_dist_reward(global_goal_pos, prev_goal_pos=self.last_goal_pos)
 
         r_final = 0
         # termination rewards
@@ -667,10 +639,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     def _time_penalty(self, step_count, max_step):
         return -0.01
 
-    def _obs_dist_reward(self, alpha=0.1):
-        min_distance = self.get_valid_laser_data()
+    # Checked
+    def _obs_dist_reward(self, tau=0.1):
+        min_distance = self.get_valid_laser_data_softmin(tau=tau)
         # print(min_distance)
-        return -1 / (min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
+        return - np.exp(-min_distance)
+        #return -1 / (min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
 
     # Checked
     def _local_goal_approach(self, local_goal, action, pos, psi):
@@ -694,12 +668,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
         return reward
 
-    def _global_goal_dist_reward(self, global_goal_pos):
+    def _global_goal_dist_reward(self, global_goal_pos, prev_goal_pos, alpha=1):
         # Calculate Euclidean distance between robot and goal
-        distance = np.linalg.norm(global_goal_pos)
-
+        approach = np.norm(global_goal_pos) - np.norm(prev_goal_pos)
+        reward = alpha * approach
         # Convert distance to reward (closer = higher reward)
-        reward = 0.005 * (1 / (distance + 1))  # Adding 1 to avoid division by zero
+        # reward = 0.005 * (1 / (distance + 1))  # Adding 1 to avoid division by zero
         return reward
 
     # def _collision_reward(self):
@@ -720,11 +694,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
         return reward
     
+    # Checked
     def _goal_approach_reward(self, global_goal_pos):
         getting_closer = (
             np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos)
         ) > 0
-        reward = 0.005 * getting_closer
+        reward = 0.05 * getting_closer
         return reward
 
     def switch_reward_function(self, reward_function):
@@ -734,12 +709,21 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             raise ValueError(
                 f"Reward function '{reward_function}' not found. Available options: {list(self.reward_functions.keys())}"
             )
+            
+    def get_valid_laser_data_softmin(self, tau=0.1):
+        laser_scan = self.gazebo_sim.get_laser_scan()
+        laser_scan = np.array(laser_scan.ranges)
+        laser_scan[laser_scan > 10] = 10
+        x = laser_scan - 0.2 # offset from the distance to lidar
+        weights = np.exp(-x / tau)
+        return np.sum(x * weights) / np.sum(weights)
+
     
-    def get_valid_laser_data(self):
+    def get_valid_laser_data_min(self):
         laser_data = self.gazebo_sim.get_laser_scan()
         ranges = np.array(laser_data.ranges)
         valid = (ranges > 0) & (ranges != np.inf)
-        if np.any(valid):
+        if np.any(valid): 
             min_distance = np.min(ranges[valid])
         else:
             min_distance = float("inf")
@@ -747,7 +731,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return min_distance
     
     def collision_with_lidar(self):
-        min_distance = self.get_valid_laser_data()
+        min_distance = self.get_valid_laser_data_min()
         if min_distance < 0.2:
             return True
         else:
