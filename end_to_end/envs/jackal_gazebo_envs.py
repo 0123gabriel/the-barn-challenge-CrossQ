@@ -325,7 +325,7 @@ class JackalGazeboLaser(JackalGazebo):
         return obs
     
     def transform_goal(self, goal_pos, pos, psi):
-        """ transform goal in the robot frame
+        """ transform goal from the initial frame to the robot frame
         params:
             pos_1
         """
@@ -342,4 +342,15 @@ class JackalGazeboLaser(JackalGazebo):
         
         dx = goal_pos[0] - pos.x
         dy = goal_pos[1] - pos.y
-        return [dx * cos_psi + dy * sin_psi, -dx * sin_psi + dy * cos_psi]
+        return np.array([dx * cos_psi + dy * sin_psi, -dx * sin_psi + dy * cos_psi])
+    
+    def transform_goal_inv(self, init_pos, goal_pos, pos, psi):
+        
+        R_r2i = np.matrix([[np.cos(psi), -np.sin(psi), pos.x], [np.sin(psi), np.cos(psi), pos.y], [0, 0, 1]]) 
+        #R_i2r = np.linalg.inv(R_r2i)
+        pi = np.matrix([[goal_pos[0]], [goal_pos[1]], [1]])
+        pr = np.matmul(R_r2i, pi)
+        lg = np.array([pr[0,0], pr[1, 0]]) - np.array([init_pos[0] + self.x_offset, init_pos[1]])
+        return lg
+        
+        
