@@ -138,20 +138,19 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
         truncation = self.step_count >= self.max_step  # Timeout
 
-        collided = self.gazebo_sim.get_hard_collision() and self.step_count > 1 # TODO: Add a condition to reset the env if the robot is 15 meters far from the goal
+        collided = (self.gazebo_sim.get_hard_collision() and self.step_count > 1) or np.norm(global_goal_pos) > 15
 
         self.collision_count += int(collided)
 
         termination = flip or success or self.collision_count >= self.max_collision or self.collision_with_lidar()
         # rew = 1
 
-        # TODO: Change the order os self.prev_pos and pos
         # TODO: Check schemes
         rew, rew_info = self.reward_func(
             self.prev_vel,
             vel,
-            pos,
             self.prev_pos,
+            pos,
             self.prev_psi,
             psi,
             success,
@@ -213,8 +212,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self,
         prev_vel,
         vel,
-        pos,
         prev_pos,
+        pos,
         prev_psi,
         psi,
         success,
@@ -264,8 +263,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self,
         prev_vel,
         vel,
-        pos,
         prev_pos,
+        pos,
         prev_psi,
         psi,
         success,
@@ -303,8 +302,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self,
         prev_vel,
         vel,
-        pos,
         prev_pos,
+        pos,
         prev_psi,
         psi,
         success,
@@ -314,12 +313,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         local_goal, 
         action
     ):
-        c_1 = 1
-        c_2 = -0.05
-        r_simple = (
-            c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
-            + c_2
-        )
+        r_simple = self._simple_progress_reward(global_goal_pos)
 
         r_final = 0
         if collided:
@@ -341,8 +335,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self,
         prev_vel,
         vel,
-        pos,
         prev_pos,
+        pos,
         prev_psi,
         psi,
         success,
@@ -391,8 +385,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self,
         prev_vel,
         vel,
-        pos,
         prev_pos,
+        pos,
         prev_psi,
         psi,
         success,
@@ -449,8 +443,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self,
         prev_vel,
         vel,
-        pos,
         prev_pos,
+        pos,
         prev_psi,
         psi,
         success,
@@ -461,12 +455,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         action
     ):
         # Simple reward component # TODO: make a function for r_simple
-        c_1 = 1
-        c_2 = -0.05
-        r_simple = (
-            c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
-            + c_2
-        )
+        r_simple = self._simple_progress_reward(global_goal_pos)
 
         # Time and smoothness components
         r_time = self._time_penalty(self.step_count, self.max_step)
@@ -507,7 +496,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "reward/time_penalty": r_time,
             "reward/smoothness_reward": r_smooth,
             "reward/soft_speed_reward": r_speed,
-            "reward/approach_reward": r_approach,
+            "reward/approach_reward": r_approach,>
             "reward/local_goal_approach": r_local_goal,
             "reward/stop_reward": r_stop,
             "reward/straight_reward": r_straight,
@@ -517,6 +506,14 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         }
         
         return total_reward, rew_info
+
+    def _simple_progress_reward(self, global_goal_pos, c_1=1, c_2=-0.05):
+        r_simple = (
+            c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
+            + c_2
+        )
+        
+        return r_simple
 
     # Checked
     def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi): 
