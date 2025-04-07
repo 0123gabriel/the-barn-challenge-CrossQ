@@ -113,13 +113,6 @@ class MotionControlContinuous(JackalGazebo):
         laser_scan = (laser_scan - self.laser_clip/2.) / self.laser_clip * 2 # scale to (-1, 1)
         
         goal_pos = self.transform_goal(self.world_frame_goal, pos, psi) #/ 5.0 - 1  # roughly (-1, 1) range
-        #print('Goal Position world frame: ', self.world_frame_goal, '===========================================================================================')
-        #print('Distance to goal: ', np.linalg.norm(goal_pos), '==================================================================')
-        #print('Goal Position: ', goal_pos, '===========================================================================================\n')
-        #print('Before global path')
-        #goal_pos_world = self.move_base.get_global_path()[-1] 
-        #print('Goal Position move base: ', goal_pos_world, '===========================================================================================')
-        #print('Goal Distance move base: ', np.linalg.norm(np.array(goal_pos_world)), '===========================================================================================\n')
         goal_pos_inv = self.transform_goal_inv(self.init_position, goal_pos, pos, psi)
         goal_pos = goal_pos / 5.0 -1 # roughly (-1, 1) range
         self.gazebo_sim.visualize_global_goal(goal_pos_inv[0], goal_pos_inv[1])

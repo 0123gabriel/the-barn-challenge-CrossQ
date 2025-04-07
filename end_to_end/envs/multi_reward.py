@@ -115,16 +115,19 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # compute observation
         obs = self._get_observation(pos, psi, action) # obts in t
         local_goal, dist_local_goal = self.move_base.get_local_goal() # Local goal in initial frame and it is in time t 
+        local_goal_trans = self.transform_goal([local_goal.position.x , local_goal.position.y], pos, psi)
+        
+        local_goal.position.x = local_goal_trans[0]
+        local_goal.position.y = local_goal_trans[1]
+        local_goal.position.z = 0.0
+        
+        local_goal_inv = self.transform_goal_inv(self.init_position, [local_goal.position.x, local_goal.position.y], pos, psi)
+        local_goal_inv[0] = local_goal_inv[0] + self.init_position[0] + self.x_offset
+        local_goal_inv[1] = local_goal_inv[1] + self.init_position[1]
+        
         # TODO: change to robot frame and change back for visualization
-        self.gazebo_sim.visualize_local_goals(local_goal.position.x, local_goal.position.y)
+        self.gazebo_sim.visualize_local_goals(local_goal_inv[0], local_goal_inv[1])
         obs = np.concatenate((obs, np.array([local_goal.position.x/1.5, local_goal.position.y/1.5]))) # this changes dimensions from 724 to 726, and 1.5 is to normalize (-1, 1)
-        
-        
-        # next_pos_x, next_pos_y, next_psi = self.get_next_pos_psi(action, pos, psi)
-        # next_pos_x -= self.x_offset
-        # next_pos_x -= self.init_position[0]
-        # next_pos_y -= self.init_position[1]
-        # self.gazebo_sim.visualize_next_pos_psi(next_pos_x, next_pos_y, next_psi)s
         
         # compute termination
         flip = pos.z > 0.1  # robot flip
@@ -496,7 +499,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "reward/time_penalty": r_time,
             "reward/smoothness_reward": r_smooth,
             "reward/soft_speed_reward": r_speed,
-            "reward/approach_reward": r_approach,>
+            "reward/approach_reward": r_approach,
             "reward/local_goal_approach": r_local_goal,
             "reward/stop_reward": r_stop,
             "reward/straight_reward": r_straight,

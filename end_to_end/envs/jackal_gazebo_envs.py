@@ -346,6 +346,11 @@ class JackalGazeboLaser(JackalGazebo):
     
     def transform_goal_inv(self, init_pos, goal_pos, pos, psi):
         
+        """ transform goal from the robot frame to the gazebo frame
+        params:
+            pos_1
+        """
+        
         R_r2i = np.matrix([[np.cos(psi), -np.sin(psi), pos.x], [np.sin(psi), np.cos(psi), pos.y], [0, 0, 1]]) 
         #R_i2r = np.linalg.inv(R_r2i)
         pi = np.matrix([[goal_pos[0]], [goal_pos[1]], [1]])
