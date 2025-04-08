@@ -10,6 +10,7 @@ from gym.spaces import Box
 import signal
 
 from envs.gazebo_simulation import GazeboSimulation
+from geometry_msgs.msg import Pose
 
 def compute_distance(p1, p2):
     return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
@@ -325,7 +326,7 @@ class JackalGazeboLaser(JackalGazebo):
         return obs
     
     def transform_goal(self, goal_pos, pos, psi):
-        """ transform goal from the initial frame to the robot frame
+        """ transform goal from the gazebo frame to the robot frame
         params:
             pos_1
         """
@@ -346,10 +347,13 @@ class JackalGazeboLaser(JackalGazebo):
     
     def transform_goal_inv(self, init_pos, goal_pos, pos, psi):
         
-        """ transform goal from the robot frame to the gazebo frame
+        """ transform goal from the robot frame to the odom frame
         params:
             pos_1
         """
+        
+        if goal_pos is Pose:
+            goal_pos = np.array([goal_pos.position.x, goal_pos.position.y])
         
         R_r2i = np.matrix([[np.cos(psi), -np.sin(psi), pos.x], [np.sin(psi), np.cos(psi), pos.y], [0, 0, 1]]) 
         #R_i2r = np.linalg.inv(R_r2i)
@@ -357,5 +361,22 @@ class JackalGazeboLaser(JackalGazebo):
         pr = np.matmul(R_r2i, pi)
         lg = np.array([pr[0,0], pr[1, 0]]) - np.array([init_pos[0] + self.x_offset, init_pos[1]])
         return lg
+    
+    def trans_from_o_to_g(self, init_pos, goal_pos):
+        """ transform goal from the odom frame to the gazebo frame
+        params:
+            pos_1
+        """
+        # R_r2i = np.matrix([[np.cos(psi), -np.sin(psi), pos.x], [np.sin(psi), np.cos(psi), pos.y], [0, 0, 1]])
+        # R_i2r = np.linalg.inv(R_r2i)
+        # pi = np.matrix([[goal_pos[0]], [goal_pos[1]], [1]])
+        # pr = np.matmul(R_i2r, pi)
+        # lg = np.array([pr[0,0], pr[1, 0]])
+        
+        # Directly compute the transformation
+        if goal_pos is Pose:
+            goal_pos = np.array([goal_pos.position.x, goal_pos.position.y])
+        
+        return np.array(goal_pos - init_pos)
         
         

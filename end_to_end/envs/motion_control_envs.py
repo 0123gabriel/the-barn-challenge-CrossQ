@@ -112,17 +112,21 @@ class MotionControlContinuous(JackalGazebo):
         laser_scan = self._get_laser_scan()
         laser_scan = (laser_scan - self.laser_clip/2.) / self.laser_clip * 2 # scale to (-1, 1)
         
-        goal_pos = self.transform_goal(self.world_frame_goal, pos, psi) #/ 5.0 - 1  # roughly (-1, 1) range
-        goal_pos_inv = self.transform_goal_inv(self.init_position, goal_pos, pos, psi)
-        goal_pos = goal_pos / 5.0 -1 # roughly (-1, 1) range
-        self.gazebo_sim.visualize_global_goal(goal_pos_inv[0], goal_pos_inv[1])
+        # World_frame_goal is in gazebo frame
+        print('World frame goal:', self.world_frame_goal, '=====================================================================================')
+        goal_pos_r = self.transform_goal(self.world_frame_goal, pos, psi) #/ 5.0 - 1  # roughly (-1, 1) range
+        print('Global goal from robot frame:', goal_pos_r)
+        goal_pos_o = self.transform_goal_inv(self.init_position, goal_pos_r, pos, psi)
+        print('Global goal from odom frame???:', goal_pos_o)
+        goal_pos_r = goal_pos_r / 5.0 -1 # roughly (-1, 1) range
+        self.gazebo_sim.visualize_global_goal(goal_pos_o[0], goal_pos_o[1])
         #print('after global path')
         
         bias = (self.action_space.high + self.action_space.low) / 2.
         scale = (self.action_space.high - self.action_space.low) / 2.
         action = (action - bias) / scale
         
-        obs = [laser_scan, goal_pos, action]
+        obs = [laser_scan, goal_pos_r, action]
         
         obs = np.concatenate(obs)
 
