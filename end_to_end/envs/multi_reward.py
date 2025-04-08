@@ -502,7 +502,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         
         return total_reward, rew_info
 
-    def _simple_progress_reward(self, global_goal_pos, c_1=1, c_2=-0.05):
+    def _simple_progress_reward(self, global_goal_pos: np.ndarray, c_1: float = 1, c_2: float = -0.05) -> float:
         r_simple = (
             c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
             + c_2
@@ -511,23 +511,31 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return r_simple
 
     # Checked
-    def _smoothness_reward(self, current_pos, current_psi, next_pos, next_psi): 
+    def _smoothness_reward(
+        self, 
+        current_pos: Pose, 
+        current_psi: float, 
+        next_pos: Pose, 
+        next_psi: float
+    ) -> float:
         """
-        Calculate a smoothness reward based on the vehicle's trajectory.
-        This function evaluates how smoothly the vehicle is moving by comparing the current and next position and orientation.
-        It uses a cross product between the combined orientation vectors and the position difference to assess smoothness.
-        based on:  DOI 10.1109/TIV.2024.3444854
+        Calculate a smoothness reward based on the vehicle's trajectory using numpy arrays.
+        This function evaluates the smoothness of movement by comparing the current and next
+        positions and orientations. It uses a cross product between the sum of normalized orientation
+        vectors and the position difference to assess smoothness.
+        Based on: DOI 10.1109/TIV.2024.3444854
+
         Parameters:
-            current_pos (Point): Current position of the vehicle (containing x, y coordinates)
-            current_psi (float): Current heading angle of the vehicle in radians
-            next_pos (Point): Next position of the vehicle (containing x, y coordinates)
-            next_psi (float): Next heading angle of the vehicle in radians
+            current_pos (np.ndarray): Current position as a numpy array [x, y].
+            current_psi (float): Current heading angle in radians.
+            next_pos (np.ndarray): Next position as a numpy array [x, y].
+            next_psi (float): Next heading angle in radians.
+
         Returns:
             float: A reward value where higher values indicate smoother trajectories.
-                   The reward is calculated as (0.001 - |F|), where F is the cross product
-                   between the sum of normalized orientation vectors and the position difference vector.
+                   The reward is calculated as (0.01 - |F|), where F is the cross product
+                   between the sum of orientation vectors and the position difference.
         """
-
         n_x_i = np.array([np.cos(current_psi), np.sin(current_psi)])
         n_x_i_plus_1 = np.array([np.cos(next_psi), np.sin(next_psi)])
 
@@ -546,7 +554,14 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return reward
 
     # Checked
-    def _speed_reward_soft(self, prev_vel, current_vel, max_vel, alpha=10, beta=20): 
+    def _speed_reward_soft(
+        self, 
+        prev_vel: float, 
+        current_vel: float, 
+        max_vel: float, 
+        alpha: float = 10, 
+        beta: float = 20
+    ) -> float: 
         reward = 0.001 * (
             1 / (1 + np.exp(-alpha * (current_vel - max_vel / 2)))
             - beta * (current_vel - prev_vel) ** 2
@@ -558,7 +573,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return np.clip(current_vel / max_vel, -0.01, limit) * 0.25
 
     # Checked
-    def _going_straight_reward(self, prev_psi, current_psi, alpha=10):
+    def _going_straight_reward(
+        self, 
+        prev_psi: float, 
+        current_psi: float, 
+        alpha: float=10.0
+        ) -> float:
         if np.abs(current_psi - prev_psi) < 0.25: # 0.2 rad as delta psi
             return 0.2
         else:
@@ -569,13 +589,18 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return -0.01
 
     # Checked
-    def _obs_dist_reward(self, tau=0.2):
+    def _obs_dist_reward(self, tau: float=0.2) -> float:
         min_distance = self.get_valid_laser_data_softmin(tau=tau)
         return - np.exp(-min_distance)
         #return -1 / (min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
 
     # Checked
-    def _local_goal_approach(self, prev_local_goal, prev_pos, pos):
+    def _local_goal_approach(
+        self, 
+        prev_local_goal: np.ndarray, 
+        prev_pos: Pose, 
+        pos: Pose
+    ) -> float:
         """
         Reward for approaching the local goal
         """
@@ -591,7 +616,11 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return reward
 
     # Checked
-    def _global_goal_dist_reward(self, global_goal_pos, prev_goal_pos, alpha=1):
+    def _global_goal_dist_reward(
+        self, 
+        global_goal_pos: np.ndarray, 
+        prev_goal_pos: np.ndarray,
+        alpha: float=1.0 ) -> float:
         # Calculate Euclidean distance between robot and goal
         approach = np.linalg.norm(global_goal_pos) - np.linalg.norm(prev_goal_pos)
         reward = alpha * approach
@@ -608,17 +637,16 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     #     return reward
 
     # Checked
-    def _stop_reward(self, prev_pos, pos):
+    def _stop_reward(self, prev_pos: Pose, pos: Pose) -> float:
         distance = np.linalg.norm([prev_pos.x - pos.x, prev_pos.y - pos.y])
         if distance < 0.01:
             reward = -0.5
         else:
-            reward = 0
-
+            reward = 0.0
         return reward
     
     # Checked
-    def _goal_approach_reward(self, global_goal_pos):
+    def _goal_approach_reward(self, global_goal_pos: np.ndarray) -> float:
         getting_closer = (
             np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos)
         ) > 0
