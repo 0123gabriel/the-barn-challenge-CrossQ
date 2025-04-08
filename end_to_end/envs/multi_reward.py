@@ -162,8 +162,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             collided,
             truncation,
             global_goal_pos,
-            local_goal_g, 
-            local_goal_gaz_frame
+            local_goal_g
         ) 
 
         self.last_goal_pos = global_goal_pos
