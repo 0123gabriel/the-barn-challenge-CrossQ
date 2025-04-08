@@ -225,7 +225,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal, 
         local_goal_gaz_frame,
     ):
         # Get local goal information
@@ -258,9 +257,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "reward/local_focused_reward_total": total_reward
         }
                 
-        # Update previous local goal for next iteration
-        self.prev_local_goal = local_goal
-                
         # Return total reward
         return total_reward, rew_info
     
@@ -276,7 +272,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal,
         local_goal_gaz_frame
     ):
         r_local = self._local_goal_approach(local_goal_gaz_frame, prev_pos, pos)
@@ -315,7 +310,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal, 
         local_goal_gaz_frame,
     ):
         r_simple = self._simple_progress_reward(global_goal_pos)
@@ -348,7 +342,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal,
         local_goal_gaz_frame
     ):
         # time penalty
@@ -398,7 +391,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal, 
         local_goal_gaz_frame
     ):
         # Stop reward
@@ -456,7 +448,6 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal, 
         local_goal_gaz_frame
     ):
         # Simple reward component # TODO: make a function for r_simple
