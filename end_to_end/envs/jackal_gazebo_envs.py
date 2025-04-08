@@ -376,7 +376,11 @@ class JackalGazeboLaser(JackalGazebo):
         # Directly compute the transformation
         if goal_pos is Pose:
             goal_pos = np.array([goal_pos.position.x, goal_pos.position.y])
+            
+        init_pos = np.array(init_pos)
+        init_pos[0] = init_pos[0] + self.x_offset
+        init_pos[1] = init_pos[1]
         
-        return np.array(goal_pos - init_pos)
+        return np.array(goal_pos + init_pos[:2])
         
         

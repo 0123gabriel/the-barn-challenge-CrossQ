@@ -113,11 +113,11 @@ class MotionControlContinuous(JackalGazebo):
         laser_scan = (laser_scan - self.laser_clip/2.) / self.laser_clip * 2 # scale to (-1, 1)
         
         # World_frame_goal is in gazebo frame
-        print('World frame goal:', self.world_frame_goal, '=====================================================================================')
+        #print('World frame goal:', self.world_frame_goal, '=====================================================================================')
         goal_pos_r = self.transform_goal(self.world_frame_goal, pos, psi) #/ 5.0 - 1  # roughly (-1, 1) range
-        print('Global goal from robot frame:', goal_pos_r)
+        #print('Global goal from robot frame:', goal_pos_r)
         goal_pos_o = self.transform_goal_inv(self.init_position, goal_pos_r, pos, psi)
-        print('Global goal from odom frame???:', goal_pos_o)
+        #print('Global goal from odom frame???:', goal_pos_o)
         goal_pos_r = goal_pos_r / 5.0 -1 # roughly (-1, 1) range
         self.gazebo_sim.visualize_global_goal(goal_pos_o[0], goal_pos_o[1])
         #print('after global path')

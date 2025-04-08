@@ -104,11 +104,11 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
     def step(self, action):
         
-        print('ACTION:', action, '===================================================================================')
+        #print('ACTION:', action, '===================================================================================')
         self._take_action(action) # We are in the state t, and before the action we were in t -1
         self.step_count += 1
         pos, psi = self._get_pos_psi()  # Position of the robot in the gazebo frame in t
-        print('Robot Position:', pos, '===================================================================================')    
+        #print('Robot Position:', pos, '===================================================================================')    
         vel = self.gazebo_sim.get_velocity() # Velocity in time t (v_t)
 
         if self.use_wandb:
@@ -118,14 +118,14 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         obs = self._get_observation(pos, psi, action) # obts in t
         local_goal_o, dist_local_goal = self.move_base.get_local_goal() # Local goal in odom frame and it is in time t 
         local_goal_o = np.array([local_goal_o.position.x, local_goal_o.position.y])
-        print('Local goal from move base, odom???:', local_goal_o, '====================================================')
+        #print('Local goal from move base, odom???:', local_goal_o, '====================================================')
         local_goal_g = self.trans_from_o_to_g(self.init_position, local_goal_o)
-        print('Local goal in gazebo frame:', local_goal_g, '====================================================')
+        #print('Local goal in gazebo frame:', local_goal_g, '====================================================')
         local_goal_r = self.transform_goal(local_goal_g, pos, psi)
-        print('Local goal in robot frame:', local_goal_r, '====================================================')
+        #print('Local goal in robot frame:', local_goal_r, '====================================================')
         # init_position is in gazebo frame
         local_goal_o = self.transform_goal_inv(self.init_position, local_goal_r, pos, psi)
-        print('Local goal in move base, odom??? frame:', local_goal_g, '====================================================================')
+        #print('Local goal in move base, odom??? frame:', local_goal_o, '====================================================================')
         
         # TODO: change to robot frame and change back for visualization
         self.gazebo_sim.visualize_local_goals(local_goal_o[0], local_goal_o[1])
@@ -187,7 +187,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             success=success,
             world=self.world_name,
             reward_function=self.reward_scheme_name,
-            reward_function_numeric=encoded_number
+            reward_function_numeric=encoded_number,
+            linear_vel=action[0],
+            angular_vel=action[1]
         )
         info.update(rew_info)
 
@@ -224,14 +226,14 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal_gaz_frame,
+        local_goal_g,
     ):
         # Get local goal information
         r_smooth = self._smoothness_reward(prev_pos, prev_psi, pos, psi)
         r_time = self._time_penalty(self.step_count, self.max_step)
                 
         # Local goal focused reward
-        r_local_goal = self._local_goal_approach(local_goal_gaz_frame, prev_pos, pos)
+        r_local_goal = self._local_goal_approach(local_goal_g, prev_pos, pos)
 
         # Obstacle avoidance reward (from lidar)
         r_obs_dist = self._obs_dist_reward()
@@ -271,9 +273,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal_gaz_frame
+        local_goal_g
     ):
-        r_local = self._local_goal_approach(local_goal_gaz_frame, prev_pos, pos)
+        r_local = self._local_goal_approach(local_goal_g, prev_pos, pos)
         r_speed = self._speed_reward_simple(vel, self.max_vel)
         r_stop = self._stop_reward(prev_pos, pos)
         
@@ -309,7 +311,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal_gaz_frame,
+        local_goal_g,
     ):
         r_simple = self._simple_progress_reward(global_goal_pos)
 
@@ -341,7 +343,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal_gaz_frame
+        local_goal_g
     ):
         # time penalty
         r_time = self._time_penalty(self.step_count, self.max_step)
@@ -390,7 +392,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal_gaz_frame
+        local_goal_g
     ):
         # Stop reward
         r_stop = self._stop_reward(prev_pos, pos)
@@ -447,7 +449,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         collided,
         truncation,
         global_goal_pos,
-        local_goal_gaz_frame
+        local_goal_g
     ):
         # Simple reward component # TODO: make a function for r_simple
         r_simple = self._simple_progress_reward(global_goal_pos)
@@ -457,7 +459,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         r_smooth = self._smoothness_reward(prev_pos, prev_psi, pos, psi)
         r_speed = self._speed_reward_soft(prev_vel, vel, self.max_vel)
         r_approach = self._goal_approach_reward(global_goal_pos)
-        r_local_goal = self._local_goal_approach(local_goal_gaz_frame, prev_pos, pos)
+        r_local_goal = self._local_goal_approach(local_goal_g, prev_pos, pos)
 
         # Lidar-based components
         r_stop = self._stop_reward(prev_pos, pos)
