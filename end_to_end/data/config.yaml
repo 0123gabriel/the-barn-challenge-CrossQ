@@ -11,9 +11,9 @@ env_config:
     max_step: 90
     time_step: 0.2
     slack_reward: 0
-    collision_reward: -1
-    failure_reward: -2.5
-    success_reward: 1
+    collision_reward: -0.2
+    failure_reward: -0.5
+    success_reward: 0.2
     goal_reward: 1
     max_collision: 1
     init_position: [-2, 3, 1.57]

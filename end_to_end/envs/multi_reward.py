@@ -131,7 +131,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self.gazebo_sim.visualize_local_goals(local_goal_o[0], local_goal_o[1])
         obs = np.concatenate((obs, local_goal_r/1.5)) # this changes dimensions from 724 to 726, and 1.5 is to normalize (-1, 1)
         
-        # compute termination
+        # compute terminal
         flip = pos.z > 0.1  # robot flip
 
         # Distance to the goal from the robot in time t
@@ -175,6 +175,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
         # Encode the reward function name into a number from 1 to 6
         encoded_number = list(self.reward_functions.keys()).index(self.reward_scheme_name) + 1
+        
 
         info = dict(
             reward=rew,
@@ -281,11 +282,11 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         
         r_final = 0
         if collided:
-            r_final += self.collision_reward
+            r_final = self.collision_reward
         if success:
-            r_final += self.success_reward
+            r_final = self.success_reward
         if truncation:
-            r_final += self.failure_reward
+            r_final = self.failure_reward
         
         total_reward = r_local + r_final + r_stop + r_speed
         
@@ -374,7 +375,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "reward/smoothness_reward": r_smooth,
             "reward/soft_speed_reward": r_speed,
             "reward/approach_reward": r_approach,
-            "reward/termination_reward": r_final,
+            "reward/terminal_reward": r_final,
             "reward/smooth_reward_total_reward": total_reward
         }
 
@@ -409,7 +410,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         r_goal_reward = self._global_goal_dist_reward(global_goal_pos, prev_goal_pos=self.last_goal_pos)
 
         r_final = 0
-        # termination rewards
+        # terminal rewards
         if collided:
             r_final = self.collision_reward
         elif success:
@@ -430,7 +431,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "reward/straight_reward": r_straight,
             "reward/speed_reward": r_speed_simple,
             "reward/obstacle_distance_reward": r_obs_dist,
-            "reward/termination_reward": r_final,
+            "reward/terminal_reward": r_final,
             "reward/global_goal_reward": r_goal_reward,
             "reward/lidar_total_reward": total_reward
         }
@@ -498,7 +499,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "reward/stop_reward": r_stop,
             "reward/straight_reward": r_straight,
             "reward/obstacle_distance_reward": r_obs_dist,
-            "reward/termination_reward": r_final,
+            "reward/terminal_reward": r_final,
             "reward/mixed_total_reward": total_reward
         }
         
@@ -663,6 +664,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     def switch_reward_function(self, reward_function):
         if reward_function in self.reward_functions:
             self.reward_func = self.reward_functions[reward_function]
+            self.reward_scheme_name = reward_function
         else:
             raise ValueError(
                 f"Reward function '{reward_function}' not found. Available options: {list(self.reward_functions.keys())}"
