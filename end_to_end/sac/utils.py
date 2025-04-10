@@ -388,7 +388,7 @@ class Simple_Curriculum:
         # Final stage parameters for all stages >= 6
         final_stage_params = {"fill_pct_range": [0.1, 0.35], "distance_range": [25, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]}
 
-        reward_types = ["simple", "simple_local", "lidar", "local", "smooth", "mixed"]
+        reward_types = ["simple", "simple_local", "lidar", "local", "smooth", "mixed", "mixed"]
         # Increment stage if success rate is high enough
         if self.current_sucess_rate > 0.8:
             self.stage += 1
