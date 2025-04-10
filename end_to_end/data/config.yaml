@@ -8,7 +8,7 @@ env_config:
     world_name: "world_0.world"
     gui: false
     verbose: false
-    max_step: 90
+    max_step: 125
     time_step: 0.2
     slack_reward: 0
     collision_reward: -0.2
@@ -18,7 +18,7 @@ env_config:
     max_collision: 1
     init_position: [-2, 3, 1.57]
     goal_position: [0, 10, 0]
-    switch_schemes: False
+    switch_schemes: false
 
     laser_clip: 5
     min_v: -1
@@ -43,7 +43,7 @@ training_config:
   exploration_noise_start: 0.1
   exploration_noise_end: 0.0999
   pre_collect: 1000
-  log_intervals: 20
+  log_intervals: 60
   validation: False
   val_interval: 1000000
 
