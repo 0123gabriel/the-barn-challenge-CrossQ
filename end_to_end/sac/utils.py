@@ -379,7 +379,7 @@ class Simple_Curriculum:
         curriculum_stages = [
             {"fill_pct_range": [0.0, 0.10], "distance_range": [10, 15], "init_position": [-2, 4, 1.57], "goal_position": [0, 3.5, 0]},  # Stage 0
             {"fill_pct_range": [0.10, 0.20], "distance_range": [10, 15], "init_position": [-2, 4, 1.57], "goal_position": [0, 5.5, 0]}, # Stage 1
-            {"fill_pct_range": [0.0, 0.10], "distance_range": [15, 25], "init_position": [-2, 4, 1.57], "goal_position": [0, 7, 0]},  # Stage 2
+            {"fill_pct_range": [0.0, 0.15], "distance_range": [15, 25], "init_position": [-2, 4, 1.57], "goal_position": [0, 7, 0]},  # Stage 2
             {"fill_pct_range": [0.1, 0.2], "distance_range": [15, 25], "init_position": [-2, 4, 1.57], "goal_position": [0, 7, 0]},   # Stage 3
             {"fill_pct_range": [0, 0.2], "distance_range": [25, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]},     # Stage 4
             {"fill_pct_range": [0, 0.3], "distance_range": [10, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]},     # Stage 5
@@ -387,7 +387,8 @@ class Simple_Curriculum:
         
         # Final stage parameters for all stages >= 6
         final_stage_params = {"fill_pct_range": [0.1, 0.35], "distance_range": [25, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]}
-        
+
+        reward_types = ["simple", "simple_local", "lidar", "local", "smooth", "mixed"]
         # Increment stage if success rate is high enough
         if self.current_sucess_rate > 0.8:
             self.stage += 1
@@ -407,8 +408,8 @@ class Simple_Curriculum:
         #init_pos_offset = round(random.uniform(-1.5, 1.25), 2) # Random x offset
         
         env_config["kwargs"]["world_name"] = world_name
-        reward_types = ["smooth", "lidar", "simple", "mixed", "local", "simple_local"]
-        env_config["kwargs"]["reward_function"] = np.random.choice(reward_types)
+        # reward_types = ["smooth", "lidar", "simple", "mixed", "local", "simple_local"]
+        env_config["kwargs"]["reward_function"] = reward_types[self.stage] #np.random.choice(reward_types)
         env_config["kwargs"]["init_position"] = params["init_position"]
         env_config["kwargs"]["goal_position"] = params["goal_position"]
 
