@@ -18,7 +18,7 @@ env_config:
     max_collision: 1
     init_position: [-2, 3, 1.57]
     goal_position: [0, 10, 0]
-    switch_schemes: true
+    switch_schemes: False
 
     laser_clip: 5
     min_v: -1
