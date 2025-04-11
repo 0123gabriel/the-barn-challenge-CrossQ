@@ -315,19 +315,21 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         local_goal_g,
     ):
         r_simple = self._simple_progress_reward(global_goal_pos)
+        r_stop = self._stop_reward(prev_pos, pos)*0.2
 
-        r_final = 0
-        if collided:
-            r_final += self.collision_reward
-        if success:
-            r_final += self.success_reward
-        if truncation:
-            r_final += self.failure_reward
+        # r_final = 0
+        # if collided:
+        #     r_final += self.collision_reward
+        # if success:
+        #     r_final += self.success_reward
+        # if truncation:
+        #     r_final += self.failure_reward
 
-        total_reward = r_simple + r_final
+        total_reward = r_simple + r_stop #+ r_final
         rew_info = {
             "reward/simple_reward/progress": r_simple,
-            "reward/terminal_reward": r_final,
+            "reward/simple_reward/stop_reward": r_stop,
+            #"reward/terminal_reward": r_final,
             "reward/simple_reward_total_reward": total_reward
         }
         return total_reward, rew_info
@@ -506,10 +508,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         return total_reward, rew_info
 
     def _simple_progress_reward(self, global_goal_pos: np.ndarray, c_1: float = 1, c_2: float = -0.05) -> float:
-        r_simple = (
-            c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
-            + c_2
-        )
+        # r_simple = (
+        #     c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
+        #     + c_2
+        # )
+        
+        r_simple = 1.0/(np.linalg.norm(global_goal_pos) + 0.3) -0.25
         
         return r_simple
 
