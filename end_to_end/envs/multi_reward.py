@@ -508,7 +508,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         
         return total_reward, rew_info
     
-    def _vel_toward_goal_reward(self, global_goal_pos: np.ndarray, vel: np.ndarray, beta: float = 0.5) -> float:
+    def _vel_toward_goal_reward(self, global_goal_pos: np.ndarray, vel: float, psi: float, beta: float = 0.5) -> float:
         """
         Calculate a reward based on the velocity of the robot towards the global goal position.
         
@@ -519,7 +519,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         Returns:
             float: A reward value where higher values indicate better alignment with the goal direction.
         """
-        reward = beta * np.dot(vel, global_goal_pos)/ self.max_vel #(np.linalg.norm(global_goal_pos) + 1e-8)
+        vel_vector = np.array([vel * np.cos(psi), vel * np.sin(psi)])
+        reward = beta * np.dot(vel_vector, global_goal_pos)/ self.max_vel #(np.linalg.norm(global_goal_pos) + 1e-8)
         return reward
     
 
