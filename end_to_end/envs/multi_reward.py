@@ -315,7 +315,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         local_goal_g,
     ):
         r_simple = self._simple_progress_reward(global_goal_pos)
-        r_stop = self._stop_reward(prev_pos, pos)*0.2
+        #r_stop = self._stop_reward(prev_pos, pos)*0.2
         r_vel_toward_goal = self._vel_toward_goal_reward(global_goal_pos, vel)
         # r_final = 0
         # if collided:
@@ -325,10 +325,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # if truncation:
         #     r_final += self.failure_reward
 
-        total_reward = r_simple + r_stop + r_vel_toward_goal #+ r_final
+        total_reward = r_simple + r_vel_toward_goal #+ r_final + r_stop
         rew_info = {
             "reward/simple_reward/progress": r_simple,
-            "reward/simple_reward/stop_reward": r_stop,
+            #"reward/simple_reward/stop_reward": r_stop,
             "reward/simple_reward/vel_toward_goal": r_vel_toward_goal,
             #"reward/terminal_reward": r_final,
             "reward/simple_reward_total_reward": total_reward
