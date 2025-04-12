@@ -339,8 +339,8 @@ class Actor(nn.Module):
         head,
         action_dim,
         input_dim = 744,
-        action_space_high = 2,
-        action_space_low = -2,
+        action_space_high = np.array([2.0, 3.14]),
+        action_space_low = np.array([-1.0, -3.14]),
         log_std_bounds: List[float] = [-20.0, 2.0],
     ):
         super(Actor, self).__init__()
@@ -357,9 +357,12 @@ class Actor(nn.Module):
         
         self.register_buffer("action_scale", torch.tensor((action_space_high - action_space_low) / 2.0))
         self.register_buffer("action_bias", torch.tensor((action_space_high + action_space_low) / 2.0))
+        print("========================================================================")
+        print('Action scale: ', self.action_scale, 'Action bias: ', self.action_bias)
+        print("========================================================================")
 
     def forward(self, state):
-        #print('State', state.shape)
+        # input dim: 744 but state is 726 and no laser data is 24 = 6*4
         cutoff = (self.input_dim - 720) // 4 # 6
         no_laser_data = state[:, :, -cutoff:].reshape(state.shape[0], -1) # 24
         #print('No laser data: ', no_laser_data.shape)
