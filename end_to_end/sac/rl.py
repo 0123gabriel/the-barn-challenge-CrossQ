@@ -46,7 +46,7 @@ class CrossQ_SAC(object):
 
         #self.target_entropy = torch.tensor(-2.0, dtype=torch.float32, device=self.device) #-torch.prod(torch.Tensor(action_range)).to(self.device)
         self.target_entropy = -torch.prod(torch.tensor(np.array(action_range).shape[-1], dtype=torch.float32, device=self.device))
-        #print('Target Entropy : ', self.target_entropy, '=======================================================================')
+        print('Target Entropy : ', self.target_entropy, '=======================================================================')
         #print('Target Entropy 1: ', self.target_entropy_1, '=======================================================================')
         init_temperature = 1.0
 
