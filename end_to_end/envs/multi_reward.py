@@ -316,7 +316,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     ):
         r_simple = self._simple_progress_reward(global_goal_pos)
         #r_stop = self._stop_reward(prev_pos, pos)*0.2
-        r_vel_toward_goal = self._vel_toward_goal_reward(global_goal_pos, vel, psi)
+        r_vel_toward_goal = 0.5 * self._vel_toward_goal_reward(global_goal_pos, vel, psi)
         # r_final = 0
         # if collided:
         #     r_final += self.collision_reward
