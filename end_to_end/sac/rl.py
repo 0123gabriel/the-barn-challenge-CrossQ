@@ -43,6 +43,8 @@ class CrossQ_SAC(object):
         self.n_step = n_step
         self.rewards_scale = 1.0
         self.target_update_freq = update_actor_freq
+        
+        self.alpha_list = [1.0, 0.7, 0.5, 0.4, 0.3, 0.2]
 
         #self.target_entropy = torch.tensor(-2.0, dtype=torch.float32, device=self.device) #-torch.prod(torch.Tensor(action_range)).to(self.device)
         self.target_entropy = -torch.prod(torch.tensor(np.array(action_range).shape[-1], dtype=torch.float32, device=self.device))
@@ -229,6 +231,31 @@ class CrossQ_SAC(object):
             total_norm += param_norm**2
         total_norm = total_norm ** (1.0 / 2)
         return total_norm
+    
+    def update_alpha(self, stage : int):
+        if stage < len(self.alpha_list):
+            self.log_alpha = torch.tensor(
+                [np.log(self.alpha_list[stage])],
+                requires_grad=True,
+                dtype=torch.float32,
+                device=self.device,
+            )
+            self.alpha_optimizer = optim.Adam(
+                [self.log_alpha], lr=self.alpha_lr, betas=(0.5, 0.999)
+            )
+        else:
+            # choose the last value
+            self.log_alpha = torch.tensor(
+                [np.log(self.alpha_list[-1])],
+                requires_grad=True,
+                dtype=torch.float32,
+                device=self.device,
+            )
+            self.alpha_optimizer = optim.Adam(
+                [self.log_alpha], lr=self.alpha_lr, betas=(0.5, 0.999)
+            )         
+            
+        self.save(f"final_policy_stage_{stage}")
 
     def save(self, run_name):
         self.actor.to("cpu")

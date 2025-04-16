@@ -294,7 +294,11 @@ def train(env_selector, env, policy, buffer, config):
         time.sleep(1)
     
         # Change env for next iteration
-        env, info = env_selector.get_env(success_rate=log["Success"])
+        env, info = env_selector.get_env(success=log["Success"])
+        
+        if info["success_rate"] > 0.8:
+            policy.update_alpha(info["stage"])
+        
         if use_wandb:
             wandb.log(info)
         collector.set_env(env)

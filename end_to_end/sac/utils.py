@@ -369,8 +369,8 @@ class Simple_Curriculum:
             world_name = os.path.join(self.worlds_dir, f"world_{world_id}.world")
         return world_name
     
-    def get_env(self, success_rate = 0.0):
-        self.current_sucess_rate = self.smoothing_factor * success_rate + (1 - self.smoothing_factor) * self.current_sucess_rate
+    def get_env(self, success = 0.0):
+        self.current_sucess_rate = self.smoothing_factor * success + (1 - self.smoothing_factor) * self.current_sucess_rate
         
         env_config = self.config["env_config"]
         env_config["kwargs"]["init_sim"] = True
