@@ -29,14 +29,14 @@ class ReplayBuffer(object):
 
         self.safe_rl = safe_rl
 
-        self.state = np.zeros((max_size, *state_dim))
-        self.action = np.zeros((max_size, action_dim))
-        self.next_state = np.zeros((max_size, *state_dim))
-        self.reward = np.zeros((max_size, 1))
-        self.collision_reward = np.zeros((max_size, 1))
-        self.terminated = np.zeros((max_size, 1))
-        self.truncated = np.zeros((max_size, 1))
-        self.task = np.zeros((max_size, 1))
+        self.state = np.zeros((max_size, *state_dim), dtype=np.float32)
+        self.action = np.zeros((max_size, action_dim), dtype=np.float32)
+        self.next_state = np.zeros((max_size, *state_dim), dtype=np.float32)
+        self.reward = np.zeros((max_size, 1), dtype=np.float32)
+        self.collision_reward = np.zeros((max_size, 1), dtype=np.float32)
+        self.terminated = np.zeros((max_size, 1), dtype=np.float32)
+        self.truncated = np.zeros((max_size, 1), dtype=np.float32)
+        self.task = np.zeros((max_size, 1), dtype=np.float32)
 
         self.mean = None
         self.std = None

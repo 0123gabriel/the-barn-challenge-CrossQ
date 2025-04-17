@@ -36,6 +36,10 @@ import envs.registration # register the env to run train.py
 log_dir = 'trainings'
 use_wandb = True 
 
+# Set torch to use float32 by default
+torch.set_default_dtype(torch.float32)
+torch.set_default_tensor_type(torch.FloatTensor)
+
 def start_roscore():
     """Start roscore in a subprocess."""
     rospy.loginfo("Starting roscore...")
