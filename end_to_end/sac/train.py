@@ -302,7 +302,7 @@ def train(env_selector, env, policy, buffer, config):
         
         if info["success_rate"] > 0.8:
             policy.update_alpha(info["stage"])
-        
+            print(f"Advancing to stage {info['stage']} with new alpha={policy.log_alpha.exp().item():.3f}")
         if use_wandb:
             wandb.log(info)
         collector.set_env(env)

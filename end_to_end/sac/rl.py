@@ -232,6 +232,10 @@ class CrossQ_SAC(object):
         total_norm = total_norm ** (1.0 / 2)
         return total_norm
     
+    def set_alpha_list(self, alpha_list):
+        self.alpha_list = alpha_list
+        print("Alpha list: ", self.alpha_list)
+    
     def update_alpha(self, stage : int):
         if stage < len(self.alpha_list):
             self.log_alpha = torch.tensor(
