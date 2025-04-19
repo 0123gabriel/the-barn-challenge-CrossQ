@@ -355,13 +355,13 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # time penalty
         r_time = 0.1 * self._time_penalty(self.step_count, self.max_step)
 
-        # smoothness reward
+        # smoothness reward (0.05 - -0.5)
         r_smooth = self._smoothness_reward(prev_pos, prev_psi, pos, psi)
 
-        # speed reward
+        # speed reward (0.2 - -0.2)
         r_speed = self._speed_reward_soft(prev_vel, vel, self.max_vel)
 
-        # reward for getting closer
+        # reward for getting closer (0.4 - -0.4)
         r_approach = self._goal_approach_reward(global_goal_pos)
 
         r_final = 0
@@ -572,8 +572,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
         # vector product between the two vectors
         F = np.cross(n_x_i + n_x_i_plus_1, pos_i_plus_1 - pos_i)
+        # Lower bound = srqt(2)*0.4 = 0.565686
 
-        reward = 0.01 - np.linalg.norm(F)
+        reward = 0.05 - np.linalg.norm(F)
         
         if reward < -0.5:
             reward = -0.5
@@ -586,10 +587,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         prev_vel: float, 
         current_vel: float, 
         max_vel: float, 
-        alpha: float = 10, 
-        beta: float = 20
+        alpha: float = 6, 
+        beta: float = 4
     ) -> float: 
-        reward = 0.001 * (
+        reward = 0.04 * (
             1 / (1 + np.exp(-alpha * (current_vel - max_vel / 2)))
             - beta * (current_vel - prev_vel) ** 2
         )
@@ -692,13 +693,14 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     def _goal_approach_reward(self, global_goal_pos: np.ndarray) -> float:
         getting_closer = (
             np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos)
-        ) > 0
+        ) #> 0
         
-        if getting_closer:
-            reward = 0.05
-        else:
-            reward = -0.03
-        #reward = 0.05 * getting_closer
+        # if getting_closer:
+        #     reward = 0.05
+        # else:
+        #     reward = -0.03
+        reward = getting_closer
+        
         return reward
 
     def switch_reward_function(self, reward_function):
