@@ -304,7 +304,7 @@ def train(env_selector, env, policy, buffer, config):
         
         new_stage = info["stage"]
         if new_stage != current_stage:
-            policy.update_alpha(new_stage)
+            policy.update_alpha(new_stage, run_name=wandb.run.name)
             current_stage = new_stage
             print("    >>>> Stage changed to %d" % new_stage)
         

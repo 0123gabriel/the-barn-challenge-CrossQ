@@ -236,7 +236,7 @@ class CrossQ_SAC(object):
         self.alpha_list = alpha_list
         print("Alpha list: ", self.alpha_list)
     
-    def update_alpha(self, stage : int):
+    def update_alpha(self, stage : int, run_name : str):
         if stage < len(self.alpha_list):
             self.log_alpha = torch.tensor(
                 [np.log(self.alpha_list[stage])],
@@ -259,9 +259,9 @@ class CrossQ_SAC(object):
                 [self.log_alpha], lr=self.alpha_lr, betas=(0.5, 0.999)
             )         
             
-        self.save(f"final_policy_stage_{stage}")
+        self.save(run_name, filename=f"checkpoint_stage_{stage}.pth")
 
-    def save(self, run_name):
+    def save(self, run_name, filename=None):
         self.actor.to("cpu")
         #path_save_model = '/home/bbruno/Documents/the-barn-challenge-CrossQ/end_to_end/trained_models'
         path_save_model = '/root/e2e_crossq/src/the-barn-challenge-CrossQ/end_to_end/trained_models'
@@ -271,7 +271,7 @@ class CrossQ_SAC(object):
         
         files = os.listdir(folder_path)
         num_files = len(files)
-        checkpoint_filename = folder_path+f"/checkpoint_{num_files}.pth"
+        checkpoint_filename = join(folder_path, filename or f"checkpoint_{num_files}.pth")
         
         state = {
             "actor_state_dict": self.actor.state_dict(),
