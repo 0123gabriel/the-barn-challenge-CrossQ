@@ -227,6 +227,8 @@ def train(env_selector, env, policy, buffer, config):
     epinfo_buf = collections.deque(maxlen=300)
     world_ep_buf = collections.defaultdict(lambda: collections.deque(maxlen=20))
     t0 = time.time()
+    
+    current_stage = 0
 
     while n_steps < training_args["max_step"]:
     
@@ -300,9 +302,12 @@ def train(env_selector, env, policy, buffer, config):
         # Change env for next iteration
         env, info = env_selector.get_env(success=log["Success"])
         
-        if info["success_rate"] > 0.8:
-            policy.update_alpha(info["stage"])
-            print(f"Advancing to stage {info['stage']} with new alpha={policy.log_alpha.exp().item():.3f}")
+        new_stage = info["stage"]
+        if new_stage != current_stage:
+            policy.update_alpha(new_stage)
+            current_stage = new_stage
+            print("    >>>> Stage changed to %d" % new_stage)
+        
         if use_wandb:
             wandb.log(info)
         collector.set_env(env)

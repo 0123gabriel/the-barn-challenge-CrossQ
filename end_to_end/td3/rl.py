@@ -12,7 +12,6 @@ from torch.distributions import Normal, Categorical
 class Actor(nn.Module):
     def __init__(self, state_preprocess, head, action_dim):
         super(Actor, self).__init__()
-
         self.state_preprocess = state_preprocess
         self.head = head
         self.fc = nn.Linear(self.state_preprocess.feature_dim, action_dim)
