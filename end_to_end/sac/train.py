@@ -173,9 +173,9 @@ def initialize_policy(config, env, init_buffer=True):
     ).to(device)
 
     critic_optim = torch.optim.Adam(
-        critic.parameters(), lr=training_config["critic_lr"]
+        critic.parameters(), lr=training_config["critic_lr"], weight_decay=training_config["critic_weight_decay"]
     )
-    actor_optim = torch.optim.Adam(actor.parameters(), lr=training_config["actor_lr"])
+    actor_optim = torch.optim.Adam(actor.parameters(), lr=training_config["actor_lr"], weight_decay=training_config["actor_weight_decay"])
     print(device)
     policy = CrossQ_SAC(
         actor=actor,
