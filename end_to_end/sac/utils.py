@@ -453,6 +453,9 @@ def get_layer_bound(layer, init, gain):
             bound = gain * sqrt(6 / (layer.in_features + layer.out_features))
         elif init == 'lecun':
             bound = sqrt(3 / layer.in_features)
+        elif init == 'orthogonal':
+            # Simulated uniform bound for orthogonal: entries ~ gain/sqrt(fan_in)
+            bound = gain / sqrt(layer.in_features)
         else:
             bound = gain * sqrt(3 / layer.in_features)
         return bound
