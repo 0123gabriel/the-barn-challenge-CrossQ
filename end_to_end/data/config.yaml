@@ -36,7 +36,7 @@ training_config:
   actor_lr: 0.00003
   actor_weight_decay: 0.000001
   critic_lr: 0.00001
-  critic_weight_decay: 0.0001
+  critic_weight_decay: 0.000005
   alpha_lr: 0.0005
   num_layers: 1
   hidden_layer_size: 512
