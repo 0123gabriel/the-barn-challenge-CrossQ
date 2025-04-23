@@ -427,7 +427,7 @@ class Simple_Curriculum:
         env = StackFrame(env, stack_frame=env_config["stack_frame"])
 
         return env, info
-    
+
 def call_reinit(m, i, o):
     m.reinit()
 
@@ -475,6 +475,22 @@ class CBPLinear(nn.Module):
             util_type='contribution',
             decay_rate=0,
     ):
+        
+        """
+        ----------------------------------------------------------------------------
+        Title       : Loss of Plasticity in Deep Continual Learning
+        Publication : Nature
+        Authors     : Shibhansh Dohare, J. Fernando Hernandez-Garcia,
+                    Qingfeng Lan, Parash Rahman,
+                    A. Rupam Mahmood & Richard S. Sutton
+        GitHub      : https://github.com/shibhansh/loss-of-plasticity
+
+        License     : MIT License
+                    © The original authors. See LICENSE file in the source repository
+                    or included in this project as required.
+        ----------------------------------------------------------------------------
+        """
+        
         super().__init__()
         if type(in_layer) is not nn.Linear:
             raise Warning("Make sure in_layer is a weight layer")
@@ -593,6 +609,22 @@ class CBPConv(nn.Module):
             util_type='contribution',
             decay_rate=0,
     ):
+        
+        """
+        ----------------------------------------------------------------------------
+        Title       : Loss of Plasticity in Deep Continual Learning
+        Publication : Nature
+        Authors     : Shibhansh Dohare, J. Fernando Hernandez-Garcia,
+                    Qingfeng Lan, Parash Rahman,
+                    A. Rupam Mahmood & Richard S. Sutton
+        GitHub      : https://github.com/shibhansh/loss-of-plasticity
+
+        License     : MIT License
+                    © The original authors. See LICENSE file in the source repository
+                    or included in this project as required.
+        ----------------------------------------------------------------------------
+        """
+        
         super().__init__()
         if type(in_layer) is not nn.Conv2d:
             raise Warning("Make sure in_layer is a convolutional layer")
