@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from sac.utils import BatchRenorm
+from sac.utils import BatchRenorm, CBPConv
 
 
 class Encoder(torch.nn.Module):
@@ -213,6 +213,8 @@ class TCNEncoder(Encoder):
         hidden_size=512,
         history_length=11,
         kernel_size=11,
+        use_continual_backprop=False,
+        batch_norm=False,
         #dropout=0.2,
     ):
         super().__init__(
@@ -241,8 +243,10 @@ class TCNEncoder(Encoder):
                     ),
                     nn.ReLU(),
                     #nn.Dropout(dropout),
+                    
                 ]
             )
+            
             dilation *= 2 # to expand the receptive field
         
         padding = 0
