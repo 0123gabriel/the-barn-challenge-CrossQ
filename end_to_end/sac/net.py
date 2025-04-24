@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from sac.utils import BatchRenorm, CBPConv
+from sac.utils import BatchRenorm, CBPConv, CBPConv1d
 
 
 class Encoder(torch.nn.Module):
@@ -228,31 +228,55 @@ class TCNEncoder(Encoder):
         self.hidden_size = hidden_size
         layers = []
         dilation = 1
-
+        
         for i in range(num_layers):
             in_ch = input_dim[0] if i == 0 else hidden_size
             padding = (dilation * (kernel_size - 1) + 1) // 2
-            layers.extend(
-                [
-                    nn.Conv1d(
+            
+            conv_layer = nn.Conv1d(
                         in_ch,
                         hidden_size,
                         kernel_size,
                         dilation=dilation,
                         padding=padding,
                     ),
-                    nn.ReLU(),
-                    #nn.Dropout(dropout),
-                    
-                ]
-            )
+            
+            bn_layer = None
+            if batch_norm:
+                bn_layer = BatchRenorm(hidden_size)
+                layers.append(bn_layer)
+                
+            layers.append(conv_layer)
+            layers.append(nn.ReLU())
+            
+            next_conv = None
+            if i < num_layers - 1:
+                next_conv = nn.Conv1d(
+                    hidden_size,
+                    hidden_size,
+                    kernel_size,
+                    dilation=dilation*2,
+                    padding=(dilation*2 * (kernel_size - 1) + 1) // 2,
+                )
+            elif i == num_layers - 1:
+                next_conv = nn.Conv1d(hidden_size, input_dim[0], padding=0, kernel_size=1) #bottleneck layer
+            
+            if use_continual_backprop and next_conv is not None:
+                cbp_layer = CBPConv1d(
+                    in_layer=conv_layer,
+                    out_layer=next_conv,
+                    bn_layer=bn_layer,
+                )
+                layers.append(cbp_layer)
             
             dilation *= 2 # to expand the receptive field
+            
+        bottleneck_layer = nn.Conv1d(hidden_size, input_dim[0], padding=0, kernel_size=1)
+        layers.append(bottleneck_layer) # Bottleneck layer
         
-        padding = 0
-        layers.append(nn.Conv1d(hidden_size, input_dim[0], padding=padding, kernel_size=1)) # Bottleneck layer
         self.net = nn.Sequential(*layers)
         self.global_pool = nn.AdaptiveAvgPool1d(1)
+        
     def forward(self, x):
         x1 = self.net(x)
         x = x + x1

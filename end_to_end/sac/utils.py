@@ -536,6 +536,8 @@ class CBPLinear(nn.Module):
         """
         Calculate uniform distribution's bound for random feature initialization
         """
+        if act_type.lower() == 'relu6':
+            act_type = 'relu'
         self.bound = get_layer_bound(layer=self.in_layer, init=init, gain=nn.init.calculate_gain(nonlinearity=act_type))
 
     def forward(self, _input):
