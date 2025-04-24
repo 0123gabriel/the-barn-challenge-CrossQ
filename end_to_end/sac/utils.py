@@ -462,6 +462,34 @@ def get_layer_bound(layer, init, gain):
 
 
 class CBPLinear(nn.Module):
+    """
+    CBPLinear Module
+    This module implements a linear transformation inspired by the work "Loss of Plasticity in Deep Continual Learning."
+    It is designed with continual learning scenarios in mind, where effective management of network plasticity is key.
+    
+    Description:
+        The CBPLinear module extends the standard nn.Module and augments a basic linear layer with mechanisms 
+        that mitigate the loss of plasticity, as outlined in the referenced publication. This design supports 
+        continual learning by balancing stability with the ability to integrate new knowledge.
+    Usage:
+        Define the necessary parameters (e.g., input and output dimensions) during initialization, 
+        and implement the forward method to specify the data flow through the linear transformation.
+    
+    ----------------------------------------------------------------------------
+    Title       : Loss of Plasticity in Deep Continual Learning
+    
+    Publication : Nature
+    
+    Authors     : Shibhansh Dohare, J. Fernando Hernandez-Garcia,
+                Qingfeng Lan, Parash Rahman,
+                A. Rupam Mahmood & Richard S. Sutton
+    
+    GitHub      : https://github.com/shibhansh/loss-of-plasticity
+
+    License     : MIT License
+                © The original authors. See LICENSE file in the source repository
+    ----------------------------------------------------------------------------
+    """
     def __init__(
             self,
             in_layer: nn.Linear,
@@ -471,26 +499,10 @@ class CBPLinear(nn.Module):
             replacement_rate=1e-4,
             maturity_threshold=100,
             init='kaiming',
-            act_type='relu',
+            act_type='relu6',
             util_type='contribution',
             decay_rate=0,
     ):
-        
-        """
-        ----------------------------------------------------------------------------
-        Title       : Loss of Plasticity in Deep Continual Learning
-        Publication : Nature
-        Authors     : Shibhansh Dohare, J. Fernando Hernandez-Garcia,
-                    Qingfeng Lan, Parash Rahman,
-                    A. Rupam Mahmood & Richard S. Sutton
-        GitHub      : https://github.com/shibhansh/loss-of-plasticity
-
-        License     : MIT License
-                    © The original authors. See LICENSE file in the source repository
-                    or included in this project as required.
-        ----------------------------------------------------------------------------
-        """
-        
         super().__init__()
         if type(in_layer) is not nn.Linear:
             raise Warning("Make sure in_layer is a weight layer")
@@ -595,6 +607,46 @@ class CBPLinear(nn.Module):
         self.reinit_features(features_to_replace)
         
 class CBPConv(nn.Module):
+    """
+    CBPLinear Module
+    This module implements a convolutional block that enhances plasticity in continual learning 
+    scenarios by dynamically managing feature utility. Inspired by "Loss of Plasticity in Deep Continual Learning," 
+    the CBPConv module extends PyTorch's standard nn.Module to incorporate selective reinitialization of features 
+    with low utility. This mechanism supports the continual integration of new knowledge by balancing network 
+    stability and adaptability.
+    
+    Initialization Parameters:
+        in_layer (nn.Conv2d): Input convolutional layer used to extract features.
+        out_layer (Union[nn.Conv2d, nn.Linear]): Output layer that processes features and can be either convolutional or linear.
+        ln_layer (nn.LayerNorm, optional): Layer normalization applied to the output features.
+        bn_layer (nn.BatchNorm2d, optional): Batch normalization applied to the output features.
+        num_last_filter_outputs (int, optional): Specifies the number of output channels for the final filter outputs.
+        replacement_rate (float, optional): Defines the rate at which underperforming features are reinitialized.
+        maturity_threshold (int, optional): The minimum age a feature must reach before it becomes eligible for reinitialization.
+        init (str, optional): Initialization method for weights (e.g., 'kaiming').
+        act_type (str, optional): Activation type utilized to determine the gain for weight initialization.
+        util_type (str, optional): Strategy employed to compute feature utility.
+        decay_rate (float, optional): Decay factor applied to the utility metric during updates.
+    
+    Usage:
+        Define the necessary parameters (e.g., input and output dimensions) during initialization, 
+        and implement the forward method to specify the data flow through the linear transformation.
+    
+    ----------------------------------------------------------------------------
+    Title       : Loss of Plasticity in Deep Continual Learning
+    
+    Publication : Nature
+    
+    Authors     : Shibhansh Dohare, J. Fernando Hernandez-Garcia,
+                Qingfeng Lan, Parash Rahman,
+                A. Rupam Mahmood & Richard S. Sutton
+    
+    GitHub      : https://github.com/shibhansh/loss-of-plasticity
+
+    License     : MIT License
+                © The original authors. See LICENSE file in the source repository
+    ----------------------------------------------------------------------------
+    """
     def __init__(
             self,
             in_layer: nn.Conv2d,
@@ -605,7 +657,7 @@ class CBPConv(nn.Module):
             replacement_rate=1e-5,
             maturity_threshold=1000,
             init='kaiming',
-            act_type='relu',
+            act_type='relu6',
             util_type='contribution',
             decay_rate=0,
     ):
@@ -621,7 +673,6 @@ class CBPConv(nn.Module):
 
         License     : MIT License
                     © The original authors. See LICENSE file in the source repository
-                    or included in this project as required.
         ----------------------------------------------------------------------------
         """
         
