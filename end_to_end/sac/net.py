@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from sac.utils import BatchRenorm, CBPConv
+from sac.utils import BatchRenorm, CBPConv, CBPLinear
 
 
 class Encoder(torch.nn.Module):
@@ -303,11 +303,34 @@ class MLP_CrossQ(nn.Module):
         self.feature_dim = hidden_layer_size
         
         layers = []
+        # for i in range(num_layers):
+        #     input_dim = hidden_layer_size if i > 0 else self.input_dim
+        #     layers.append(BatchRenorm(input_dim))
+        #     layers.append(nn.Linear(input_dim, hidden_layer_size))
+        #     layers.append(get_activation(activation)())
+        
+        #self.linears = nn.ModuleList()
+        #self.cbps = nn.ModuleList()
+        self.layers = nn.ModuleList()
+
         for i in range(num_layers):
             input_dim = hidden_layer_size if i > 0 else self.input_dim
-            layers.append(BatchRenorm(input_dim))
-            layers.append(nn.Linear(input_dim, hidden_layer_size))
-            layers.append(get_activation(activation)())
+            in_layer = nn.Linear(input_dim, hidden_layer_size)
+            out_layer = nn.Linear(input_dim, hidden_layer_size)
+            
+            self.layers.append(BatchRenorm(input_dim))
+            self.layers.append(in_layer)
+            self.layers.append(get_activation(activation)())
+            
+            # If this is not the first layer, create a CBPLinear from previous to this one
+            if i > 0:
+                cbp = CBPLinear(
+                    in_layer=in_layer,
+                    out_layer=out_layer,
+                    init='orthogonal',
+                )
+                self.layers.append(cbp)
+                #self.cbps.append(cbp)
 
         layers.append(BatchRenorm(hidden_layer_size, momentum=0.01))
         self.mlp = nn.Sequential(*layers)

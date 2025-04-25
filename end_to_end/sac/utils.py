@@ -536,6 +536,8 @@ class CBPLinear(nn.Module):
         """
         Calculate uniform distribution's bound for random feature initialization
         """
+        if act_type.lower() == 'relu6':
+            act_type = 'relu'
         self.bound = get_layer_bound(layer=self.in_layer, init=init, gain=nn.init.calculate_gain(nonlinearity=act_type))
 
     def forward(self, _input):
@@ -650,7 +652,7 @@ class CBPConv(nn.Module):
     def __init__(
             self,
             in_layer: nn.Conv2d,
-            out_layer: List[nn.Conv2d, nn.Linear],
+            out_layer: Union[nn.Conv2d, nn.Linear],
             ln_layer: nn.LayerNorm = None,
             bn_layer: BatchRenorm = None,
             num_last_filter_outputs=1,
