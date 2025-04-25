@@ -239,7 +239,7 @@ class TCNEncoder(Encoder):
                         kernel_size,
                         dilation=dilation,
                         padding=padding,
-                    ),
+                    )
             
             bn_layer = None
             if batch_norm:
@@ -266,6 +266,7 @@ class TCNEncoder(Encoder):
                     in_layer=conv_layer,
                     out_layer=next_conv,
                     bn_layer=bn_layer,
+                    act_type='relu',
                 )
                 layers.append(cbp_layer)
             
