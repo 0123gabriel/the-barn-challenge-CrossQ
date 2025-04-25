@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import pickle
 import copy
-from sac.utils import BatchRenorm, SquashedNormal
+from sac.utils import BatchRenorm, SquashedNormal, CBPLinear
 from sac.net import get_activation, MLP
 
 
@@ -323,18 +323,44 @@ class CrossQCritic(nn.Module):
     # TODO: adjust this to work as the td3 critic, the problem is not making the NN too deep
     # TODO: also make the network parameters adjustable from the configuration
     # TODO: one option is to make a CrossQ-MLP for the head
-    def __init__(self, state_preprocess, head):
+    def __init__(self, state_preprocess, head, use_continual_backprop=False):
         super(CrossQCritic, self).__init__()
 
         # Q1 architecture
         self.state_preprocess1 = state_preprocess
         self.head1 = head
-        self.fc1 = nn.Linear(self.state_preprocess1.hidden_size, 1)
-
+        fc1 = nn.Linear(self.state_preprocess1.hidden_size, 1)
+        
         # Q2 architecture
         self.state_preprocess2 = state_preprocess
         self.head2 = head
-        self.fc2 = nn.Linear(self.state_preprocess2.hidden_size, 1)
+        fc2 = nn.Linear(self.state_preprocess2.hidden_size, 1)
+        
+        cbp1 = None
+        cbp2 = None
+        if use_continual_backprop:
+            prev_lin, prev_br = head.get_last_layers()
+            cbp1 = CBPLinear(
+                        in_layer=prev_lin,
+                        out_layer=fc1,
+                        bn_layer = prev_br,
+                        init='orthogonal',
+                    )
+            
+            cbp2 = CBPLinear(
+                        in_layer=prev_lin,
+                        out_layer=fc2,
+                        bn_layer = prev_br,
+                        init='orthogonal',
+                    )
+        
+        if cbp1 is None: # Use only cbp1 because if cbp1 is created, then cbp2 is also created
+            self.last_layer1 =  fc1
+            self.last_layer2 =  fc2
+        else:
+            self.last_layer1 = cbp1
+            self.last_layer2 = cbp2
+            
 
     def _initialize_weights(self):
         for layer in list(self.q1) + list(self.q2):
@@ -352,13 +378,13 @@ class CrossQCritic(nn.Module):
         state1 = torch.cat([state1, no_laser_data], dim=1)
         sa1 = torch.cat([state1, action], dim=1)
         x1 = self.head1(sa1)
-        q1 = self.fc1(x1)
+        q1 = self.last_layer1(x1)
 
         state2 = self.state_preprocess2(state) if self.state_preprocess2 else state
         state2 = torch.cat([state2, no_laser_data], dim=1)
         sa2 = torch.cat([state2, action], dim=1)
         x2 = self.head2(sa2)
-        q2 = self.fc2(x2)
+        q2 = self.last_layer1(x2)
 
         return q1, q2
 
@@ -373,16 +399,44 @@ class Actor(nn.Module):
         action_space_high = np.array([2.0, 3.14]),
         action_space_low = np.array([-1.0, -3.14]),
         log_std_bounds: List[float] = [-20.0, 2.0],
+        use_continual_backprop=False,
     ):
         super(Actor, self).__init__()
         self.state_preprocess = state_preprocess
         self.head = head
         self.input_dim = input_dim 
 
-        self.fc = nn.Linear(self.state_preprocess.feature_dim, action_dim)
-
-        self.mean = nn.Linear(self.head.feature_dim, action_dim)
-        self.log_std = nn.Linear(self.head.feature_dim, action_dim)
+        mean = nn.Linear(self.head.feature_dim, action_dim)
+        log_std = nn.Linear(self.head.feature_dim, action_dim)
+        
+        cbp_mean = None
+        cbp_log_std = None
+        if use_continual_backprop:
+            prev_lin, prev_br = self.head.get_last_layers()
+            cbp_mean = CBPLinear(
+                        in_layer=prev_lin,
+                        out_layer=mean,
+                        bn_layer = prev_br,
+                        init='orthogonal',
+                    )
+            
+            cbp_log_std = CBPLinear(
+                        in_layer=prev_lin,
+                        out_layer=log_std,
+                        bn_layer = prev_br,
+                        init='orthogonal',
+                    )
+            
+        if cbp_mean is None:
+            self.mean = mean
+        else:
+            self.mean = cbp_mean
+            
+        if cbp_log_std is None:
+            self.log_std = log_std
+        else:
+            self.log_std = cbp_log_std
+            
 
         self.log_std_min, self.log_std_max = log_std_bounds
         

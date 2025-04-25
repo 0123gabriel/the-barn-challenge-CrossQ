@@ -290,7 +290,7 @@ class MLP(nn.Module):
         return self.mlp(x)
     
 class MLP_CrossQ(nn.Module):
-    def __init__(self, input_dim, num_layers=2, hidden_layer_size=512, activation="relu6"):
+    def __init__(self, input_dim, num_layers=2, hidden_layer_size=512, activation="relu6", use_continual_backprop=True):
         """
         MLP CrossQ style:
         - num_layers: 
@@ -303,36 +303,30 @@ class MLP_CrossQ(nn.Module):
         self.feature_dim = hidden_layer_size
         
         layers = []
-        # for i in range(num_layers):
-        #     input_dim = hidden_layer_size if i > 0 else self.input_dim
-        #     layers.append(BatchRenorm(input_dim))
-        #     layers.append(nn.Linear(input_dim, hidden_layer_size))
-        #     layers.append(get_activation(activation)())
+        layers.append(BatchRenorm(self.input_dim)) 
         
-        #self.linears = nn.ModuleList()
-        #self.cbps = nn.ModuleList()
-        self.layers = nn.ModuleList()
-
         for i in range(num_layers):
             input_dim = hidden_layer_size if i > 0 else self.input_dim
             in_layer = nn.Linear(input_dim, hidden_layer_size)
-            out_layer = nn.Linear(input_dim, hidden_layer_size)
             
-            self.layers.append(BatchRenorm(input_dim))
-            self.layers.append(in_layer)
-            self.layers.append(get_activation(activation)())
+            layers.append(in_layer)
+            layers.append(get_activation(activation)())
+            layers.append(BatchRenorm(hidden_layer_size)) 
             
-            # If this is not the first layer, create a CBPLinear from previous to this one
-            if i > 0:
-                cbp = CBPLinear(
+            out_layer = None
+            if i < num_layers - 1:
+                out_layer = nn.Linear(hidden_layer_size, hidden_layer_size)
+            
+            if use_continual_backprop and out_layer is not None:
+                cbp_layer = CBPLinear(
                     in_layer=in_layer,
                     out_layer=out_layer,
+                    bn_layer = BatchRenorm(input_dim),
                     init='orthogonal',
                 )
-                self.layers.append(cbp)
-                #self.cbps.append(cbp)
+                layers.append(cbp_layer)
 
-        layers.append(BatchRenorm(hidden_layer_size, momentum=0.01))
+        #layers.append(BatchRenorm(hidden_layer_size, momentum=0.01))
         self.mlp = nn.Sequential(*layers)
         self._initialize_weights()
     
@@ -341,6 +335,18 @@ class MLP_CrossQ(nn.Module):
             if isinstance(m, nn.Linear):
                 nn.init.orthogonal_(m.weight)
                 nn.init.zeros_(m.bias)
+                
+    def get_last_layers(self):
+        last_linear = None
+        last_batchrenorm = None
+        for layer in reversed(self.mlp):
+            if last_linear is None and isinstance(layer, nn.Linear):
+                last_linear = layer
+            if last_batchrenorm is None and isinstance(layer, BatchRenorm):
+                last_batchrenorm = layer
+            if last_linear is not None and last_batchrenorm is not None:
+                break
+        return last_linear, last_batchrenorm
     
     def forward(self, x):
         return self.mlp(x)
