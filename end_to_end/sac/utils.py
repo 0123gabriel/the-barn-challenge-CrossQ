@@ -652,7 +652,7 @@ class CBPConv(nn.Module):
     def __init__(
             self,
             in_layer: nn.Conv2d,
-            out_layer: List[nn.Conv2d, nn.Linear],
+            out_layer: Union[nn.Conv2d, nn.Linear],
             ln_layer: nn.LayerNorm = None,
             bn_layer: BatchRenorm = None,
             num_last_filter_outputs=1,
