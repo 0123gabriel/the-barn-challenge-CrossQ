@@ -144,6 +144,8 @@ def initialize_policy(config, env, init_buffer=True):
         "num_layers": training_config["encoder_num_layers"],
         "hidden_size": training_config["encoder_hidden_layer_size"],
         "history_length": config["env_config"]["stack_frame"],
+        "use_continual_backprop": training_config["encoder_use_continual_backprop"],
+        "batch_norm": training_config   ["encoder_batch_norm"],
     }
 
     input_dim = 744 # Input dim is [laser dimensio + stack frames*size of local goal + stack frames*action dim] + local_goal * stack frames
@@ -153,11 +155,13 @@ def initialize_policy(config, env, init_buffer=True):
             input_dim,
             training_config["encoder_num_layers"],
             training_config["encoder_hidden_layer_size"],
+            use_continual_backprop=training_config["encoder_use_continual_backprop"],
         ),
         action_dim=action_dim,
         input_dim=input_dim,
         action_space_high=action_space_high, 
-        action_space_low=action_space_low
+        action_space_low=action_space_low,
+        use_continual_backprop=training_config["encoder_use_continual_backprop"],
     ).to(device)
 
     print("Total number of parameters: %d" % sum(p.numel() for p in actor.parameters()))
@@ -169,7 +173,9 @@ def initialize_policy(config, env, init_buffer=True):
             input_dim,
             training_config["encoder_num_layers"],
             training_config["encoder_hidden_layer_size"],
+            use_continual_backprop=training_config["encoder_use_continual_backprop"],
         ),
+        use_continual_backprop=training_config["encoder_use_continual_backprop"],
     ).to(device)
 
     critic_optim = torch.optim.Adam(

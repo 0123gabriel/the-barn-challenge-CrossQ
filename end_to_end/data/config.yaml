@@ -40,8 +40,11 @@ training_config:
   alpha_lr: 0.0005
   num_layers: 1
   hidden_layer_size: 512
+  use_continual_backprop: True
   encoder_num_layers: 2
   encoder_hidden_layer_size: 512
+  encoder_use_continual_backprop: True
+  encoder_batch_norm: True
   exploration_noise_start: 0.1
   exploration_noise_end: 0.0999
   pre_collect: 1000
