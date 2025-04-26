@@ -243,7 +243,7 @@ class TCNEncoder(Encoder):
             
             bn_layer = None
             if batch_norm:
-                bn_layer = BatchRenorm(hidden_size)
+                bn_layer = BatchRenorm(in_ch)
                 layers.append(bn_layer)
                 
             layers.append(conv_layer)

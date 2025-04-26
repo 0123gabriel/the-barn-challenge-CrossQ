@@ -336,8 +336,6 @@ class CrossQCritic(nn.Module):
         self.head2 = head
         fc2 = nn.Linear(self.state_preprocess2.hidden_size, 1)
         
-        cbp1 = None
-        cbp2 = None
         if use_continual_backprop:
             prev_lin, prev_br = head.get_last_layers()
             cbp1 = CBPLinear(
@@ -353,13 +351,13 @@ class CrossQCritic(nn.Module):
                         bn_layer = prev_br,
                         init='orthogonal',
                     )
+            
+            self.fc1 = nn.Sequential(cbp1, fc1)
+            self.fc2 = nn.Sequential(cbp2, fc2)
         
-        if cbp1 is None: # Use only cbp1 because if cbp1 is created, then cbp2 is also created
-            self.last_layer1 =  fc1
-            self.last_layer2 =  fc2
         else:
-            self.last_layer1 = cbp1
-            self.last_layer2 = cbp2
+            self.fc1 = nn.Sequential(fc1)
+            self.fc2 = nn.Sequential(fc2)
             
 
     def _initialize_weights(self):
@@ -378,13 +376,13 @@ class CrossQCritic(nn.Module):
         state1 = torch.cat([state1, no_laser_data], dim=1)
         sa1 = torch.cat([state1, action], dim=1)
         x1 = self.head1(sa1)
-        q1 = self.last_layer1(x1)
+        q1 = self.fc1(x1)
 
         state2 = self.state_preprocess2(state) if self.state_preprocess2 else state
         state2 = torch.cat([state2, no_laser_data], dim=1)
         sa2 = torch.cat([state2, action], dim=1)
         x2 = self.head2(sa2)
-        q2 = self.last_layer1(x2)
+        q2 = self.fc2(x2)
 
         return q1, q2
 
@@ -409,8 +407,6 @@ class Actor(nn.Module):
         mean = nn.Linear(self.head.feature_dim, action_dim)
         log_std = nn.Linear(self.head.feature_dim, action_dim)
         
-        cbp_mean = None
-        cbp_log_std = None
         if use_continual_backprop:
             prev_lin, prev_br = self.head.get_last_layers()
             cbp_mean = CBPLinear(
@@ -427,16 +423,11 @@ class Actor(nn.Module):
                         init='orthogonal',
                     )
             
-        if cbp_mean is None:
+            self.mean = nn.Sequential(cbp_mean, mean)
+            self.log_std = nn.Sequential(cbp_log_std, log_std)
+        else:
             self.mean = mean
-        else:
-            self.mean = cbp_mean
-            
-        if cbp_log_std is None:
             self.log_std = log_std
-        else:
-            self.log_std = cbp_log_std
-            
 
         self.log_std_min, self.log_std_max = log_std_bounds
         
