@@ -43,6 +43,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         self.prev_vel = None
         self.prev_local_goal = None
         self.x_offset = 0
+        
+        self.reward_weights = np.array([10, 7, 0.5, 1, 1, 1.5, 1, 1, 2, 1])
 
     def reset(self):
         """
@@ -213,6 +215,87 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             theta_new = psi + action[1] * self.time_step
             
         return x_new, y_new, theta_new
+    
+    def combined_normalized_reward(
+        self,
+        prev_vel,
+        vel,
+        prev_pos,
+        pos,
+        prev_psi,
+        psi,
+        success,
+        collided,
+        truncation,
+        global_goal_pos,
+        local_goal_g):
+        # reward
+        
+        # Create a numpy array of reward components [reward_value, min_value, max_value]
+        # Each row is a reward component
+        reward_array = np.zeros((10, 3))
+
+        # Calculate reward values and store in array
+        reward_array[0] = [self._simple_progress_reward(global_goal_pos), -0.2, 1.5]
+        reward_array[1] = [self._vel_toward_goal_reward(global_goal_pos, vel, psi), -4, 2]
+        reward_array[2] = [self._obs_dist_reward(), -0.4, 0.16]
+        reward_array[3] = [self._local_goal_approach_linear(local_goal_g, prev_pos, pos), -0.45, 0.45]
+        reward_array[4] = [self._local_goal_approach_quadratic(local_goal_g, prev_pos, pos), -0.5, 0.5]
+        reward_array[5] = [self._smoothness_reward(prev_pos, prev_psi, pos, psi), -0.5, 0.05]
+        reward_array[6] = [self._stop_reward(prev_pos, pos), -0.5, 0]
+        reward_array[7] = [self._going_straight_reward(prev_psi, psi), 0.025, 0.1]
+        reward_array[8] = [self._speed_reward_soft(prev_vel, vel, self.max_vel), -0.2, 0.2]
+        reward_array[9] = [self._terminal_reward(success, collided, truncation), self.failure_reward, self.success_reward]
+        
+        self.reward_weights = np.array([10, 7, 1, 4, 4, 1.5, 6, 1, 2, 1]) # fase 2
+        self.reward_weights = np.array([10, 5, 2, 4, 4, 5, 3, 2, 2.5, 2]) # fase 3
+        self.reward_weights = np.array([10, 6, 3, 4, 4, 5, 1, 2, 2.5, 2]) # fase 4
+        self.reward_weights = np.array([10, 2, 3, 4, 4, 8, 1, 2, 7, 5]) # fase 5
+        self.reward_weights = np.array([10, 1, 3, 4, 4, 10, 1, 2, 9, 5]) # fase 6
+        
+        
+        rewards = self.bounded_weighted_reward(
+            reward_array[:, 0], 
+            reward_array[:, 1], 
+            reward_array[:, 2], 
+            self.reward_weights
+        )
+        
+        return rewards
+        
+        
+    def bounded_weighted_reward(raw_rewards, min_rewards, max_rewards, weights):
+        """
+        Compute a total reward in [-1, 1] by normalizing, weighting, and combining reward components.
+
+        Parameters:
+        - raw_rewards: np.array of shape (n,)
+        - min_rewards: np.array of shape (n,)
+        - max_rewards: np.array of shape (n,)
+        - weights:     np.array of shape (n,)
+
+        Returns:
+        - total_reward: float in [-1, 1]
+        """
+        raw_rewards = np.asarray(raw_rewards, dtype=np.float32)
+        min_rewards = np.asarray(min_rewards, dtype=np.float32)
+        max_rewards = np.asarray(max_rewards, dtype=np.float32)
+        weights     = np.asarray(weights, dtype=np.float32)
+
+        # Avoid division by zero in case min == max
+        ranges = np.clip(max_rewards - min_rewards, a_min=1e-8, a_max=None)
+
+        # Normalize to [-1, 1]
+        normalized = 2 * (raw_rewards - min_rewards) / ranges - 1
+
+        # Weighted sum and normalization to [-1, 1]
+        total_weight = np.sum(np.abs(weights))
+        if total_weight == 0:
+            return 0.0  # Avoid division by zero
+
+        total_reward = np.sum(weights * normalized) / total_weight
+        return float(np.clip(total_reward, -1.0, 1.0))
+
 
     def local_focused_scheme(
         self,
@@ -511,9 +594,34 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         
         return total_reward, rew_info
     
+    def _terminal_reward(self, success: bool, collided: bool, truncation: bool) -> float:
+        """
+        Calculate a terminal reward based on the success, collision, and truncation status.
+        
+        Range: (-1, 1)
+        
+        Parameters:
+            success (bool): Indicates if the episode was successful.
+            collided (bool): Indicates if a collision occurred.
+            truncation (bool): Indicates if the episode was truncated.
+
+        Returns:
+            float: A reward value where higher values indicate better outcomes.
+        """
+        if success:
+            return self.success_reward
+        elif collided:
+            return self.collision_reward
+        elif truncation:
+            return self.failure_reward
+        else:
+            return 0.0
+    
     def _vel_toward_goal_reward(self, global_goal_pos: np.ndarray, vel: float, psi: float, beta: float = 0.5) -> float:
         """
         Calculate a reward based on the velocity of the robot towards the global goal position.
+        
+        Range: (-4, 2)
         
         Parameters:
             global_goal_pos (np.ndarray): Global goal position as a numpy array [x, y].
@@ -528,6 +636,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     
 
     def _simple_progress_reward(self, global_goal_pos: np.ndarray, c_1: float = 1, c_2: float = -0.05) -> float:
+        """
+        range: (-0.2 - 1.5)
+        """
         # r_simple = (
         #     c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
         #     + c_2
@@ -551,6 +662,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         positions and orientations. It uses a cross product between the sum of normalized orientation
         vectors and the position difference to assess smoothness.
         Based on: DOI 10.1109/TIV.2024.3444854
+
+        range = (0.05 - -0.5)
 
         Parameters:
             current_pos (np.ndarray): Current position as a numpy array [x, y].
@@ -590,6 +703,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         alpha: float = 6, 
         beta: float = 4
     ) -> float: 
+        """
+        range: (0.2 - -0.2)
+        """
         reward = 0.04 * (
             1 / (1 + np.exp(-alpha * (current_vel - max_vel / 2)))
             - beta * (current_vel - prev_vel) ** 2
@@ -607,6 +723,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         current_psi: float, 
         alpha: float=10.0
         ) -> float:
+        """
+        range: (0.1 - 0.025)
+        """
+        
         if np.abs(current_psi - prev_psi) < 0.25: # 0.2 rad as delta psi
             return 0.1
         else:
@@ -618,6 +738,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
     # Checked
     def _obs_dist_reward(self, tau: float=0.2, offset: float = 0.16) -> float:
+        """
+        range: (-0.4 - 0.16)
+        """
         min_distance = self.get_valid_laser_data_softmin(tau=tau)
         return - np.exp(-min_distance) + offset
         #return -1 / (min_distance + 1e-8) * alpha + 0.1 if min_distance < 1 else 0
@@ -631,6 +754,8 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     ) -> float:
         """
         Reward for approaching the local goal
+        
+        range: (0.45 - -0.45)
         """
         
         prev_dist = np.linalg.norm(np.array([prev_local_goal[0] - prev_pos.x, prev_local_goal[1] - prev_pos.y]))
@@ -650,8 +775,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     ) -> float:
         """
         Reward for approaching the local goal
-        """
         
+        range: (-0.5 - 0.5)
+        """        
         prev_dist = np.linalg.norm(np.array([prev_local_goal[0] - prev_pos.x, prev_local_goal[1] - prev_pos.y]))
         curr_dist = np.linalg.norm(np.array([prev_local_goal[0] - pos.x, prev_local_goal[1] - pos.y]))
         
@@ -682,6 +808,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
     # Checked
     def _stop_reward(self, prev_pos: Pose, pos: Pose) -> float:
+        """
+        range: (0, -0.5)
+        """
         distance = np.linalg.norm([prev_pos.x - pos.x, prev_pos.y - pos.y])
         if distance < 0.05:
             reward = -0.5
@@ -691,9 +820,13 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
     
     # Checked
     def _goal_approach_reward(self, global_goal_pos: np.ndarray) -> float:
+        """
+        range: (0.4 - -0.4)
+        """
         getting_closer = (
             np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos)
-        ) #> 0
+        )
+        #> 0
         
         # if getting_closer:
         #     reward = 0.05

@@ -392,6 +392,23 @@ class Simple_Curriculum:
         final_stage_params = {"fill_pct_range": [0.1, 0.35], "distance_range": [25, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]}
 
         reward_types = ["simple", "simple_local", "lidar", "local", "smooth", "mixed", "mixed"]
+        
+        
+        # Define reward weights for different stages
+        self.stage_reward_weights = {
+            0: np.array([10, 7, 0.5, 1, 1, 1.5, 1, 1, 2, 1]),  # fase 1
+            1: np.array([10, 7, 1, 4, 4, 1.5, 6, 1, 2, 1]),    # fase 2
+            2: np.array([10, 5, 2, 4, 4, 5, 3, 2, 2.5, 2]),    # fase 3
+            3: np.array([10, 6, 3, 4, 4, 5, 1, 2, 2.5, 2]),    # fase 4
+            4: np.array([10, 2, 3, 4, 4, 8, 1, 2, 7, 5]),      # fase 5 
+            5: np.array([10, 1, 3, 4, 4, 10, 1, 2, 9, 5])      # fase 6
+        }
+
+        # Default reward weights for stages beyond those defined
+        self.default_reward_weights = np.array([10, 1, 3, 4, 4, 10, 1, 2, 9, 5])
+        
+        # TODO: change the reward weights for the different stages
+        
         # Increment stage if success rate is high enough
         if self.current_sucess_rate > 0.8:
             self.stage += 1
