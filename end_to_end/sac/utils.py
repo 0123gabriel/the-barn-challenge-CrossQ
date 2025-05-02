@@ -463,6 +463,8 @@ def log_features(m, i, o):
 def get_layer_bound(layer, init, gain):
     if isinstance(layer, nn.Conv2d):
         return sqrt(1 / (layer.in_channels * layer.kernel_size[0] * layer.kernel_size[1]))
+    elif isinstance(layer, nn.Conv1d):
+        return sqrt(1 / (layer.in_channels * layer.kernel_size[0]))
     elif isinstance(layer, nn.Linear):
         if init == 'default':
             bound = sqrt(1 / layer.in_features)
