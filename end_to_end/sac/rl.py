@@ -323,9 +323,10 @@ class CrossQCritic(nn.Module):
     # TODO: adjust this to work as the td3 critic, the problem is not making the NN too deep
     # TODO: also make the network parameters adjustable from the configuration
     # TODO: one option is to make a CrossQ-MLP for the head
-    def __init__(self, state_preprocess, head, use_continual_backprop=False):
+    def __init__(self, state_preprocess, head, use_continual_backprop=False, laser_dim=720):
         super(CrossQCritic, self).__init__()
 
+        self.laser_dim = laser_dim
         # Q1 architecture
         self.state_preprocess1 = state_preprocess
         self.head1 = head
@@ -369,7 +370,7 @@ class CrossQCritic(nn.Module):
     def forward(
         self, state: torch.Tensor, action: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        cutoff = (self.head1.input_dim - 720 - 2) // 4
+        cutoff = (self.head1.input_dim - self.laser_dim - 2) // 4
         no_laser_data = state[:, :, -cutoff:].reshape(state.shape[0], -1)
         state = state[:, :, :-cutoff]
         state1 = self.state_preprocess1(state) if self.state_preprocess1 else state
@@ -398,11 +399,13 @@ class Actor(nn.Module):
         action_space_low = np.array([-1.0, -3.14]),
         log_std_bounds: List[float] = [-20.0, 2.0],
         use_continual_backprop=False,
+        laser_dim=720,
     ):
         super(Actor, self).__init__()
         self.state_preprocess = state_preprocess
         self.head = head
         self.input_dim = input_dim 
+        self.laser_dim = laser_dim
 
         mean = nn.Linear(self.head.feature_dim, action_dim)
         log_std = nn.Linear(self.head.feature_dim, action_dim)
@@ -439,7 +442,7 @@ class Actor(nn.Module):
 
     def forward(self, state):
         # input dim: 744 but state is 726 and no laser data is 24 = 6*4
-        cutoff = (self.input_dim - 720) // 4 # 6
+        cutoff = (self.input_dim - self.laser_dim) // 4 # 6
         no_laser_data = state[:, :, -cutoff:].reshape(state.shape[0], -1) # 24
         #print('No laser data: ', no_laser_data.shape)
         state = state[:, :, :-cutoff] # 720
@@ -448,6 +451,7 @@ class Actor(nn.Module):
         #print('State after preprocessing: ', s.shape) 
         #print('No laser data: ', no_laser_data.shape)
         s = torch.cat([s, no_laser_data], dim=1) # 744
+        print('State previous ', s.shape, '======================================')
         
         #print('S', s.shape)
         mean = self.mean(self.head(s))

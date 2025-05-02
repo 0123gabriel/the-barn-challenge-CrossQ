@@ -76,7 +76,7 @@ training_config:
     max_step: 4000000
     collect_per_step: 1000
     update_per_step: 250
-    batch_size: 128
+    batch_size: 64
 
 condor_config:
   test_object: "local"  # or "dwa"

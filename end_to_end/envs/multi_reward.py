@@ -181,7 +181,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # rew = 1
 
         # TODO: Check schemes
-        rew, rew_info = self.reward_func(
+        rew, rew_info = self.combined_normalized_reward(
             self.prev_vel,
             vel,
             self.prev_pos,
