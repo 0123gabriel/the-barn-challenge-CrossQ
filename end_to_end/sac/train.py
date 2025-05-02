@@ -148,7 +148,7 @@ def initialize_policy(config, env, init_buffer=True):
         "batch_norm": training_config   ["encoder_batch_norm"],
     }
 
-    laser_dim = 720 / config["env_config"]["laser_reduce_factor"]
+    laser_dim = 720 / config["env_config"]["kwargs"]["laser_reduce_factor"]
     input_dim = laser_dim + config["env_config"]["stack_frame"] * (6) # Input dim is [laser dimensio + stack frames *(vel (2) + local_goal_dim (2) + global_goal_dim (2))]
     actor = Actor(
         state_preprocess=get_encoder(encoder_type, encoder_args),
