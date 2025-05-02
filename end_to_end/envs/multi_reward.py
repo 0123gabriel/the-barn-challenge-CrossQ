@@ -30,6 +30,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "mixed": self.mixed_scheme,
             "local": self.local_focused_scheme,
             "simple_local": self.simple_local_scheme,
+            "combined": self.combined_normalized_reward,
         }
 
         self.switch_schemes = switch_schemes
@@ -317,8 +318,21 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             reward_array[:, 2],
             self.reward_weights,
         )
+        rew_info = {
+            "reward/simple_reward/progress": reward_array[0, 0],
+            "reward/vel_toward_goal": reward_array[1, 0],
+            "reward/obstacle_distance_reward": reward_array[2, 0],
+            "reward/local_goal_approach_linear": reward_array[3, 0],
+            "reward/local_goal_approach_quadratic": reward_array[4, 0],
+            "reward/smoothness_reward": reward_array[5, 0],
+            "reward/stop_reward": reward_array[6, 0],
+            "reward/going_straight_reward": reward_array[7, 0],
+            "reward/soft_speed_reward": reward_array[8, 0],
+            "reward/terminal_reward": reward_array[9, 0],
+            "reward/combined_reward_total": rewards,
+        }
 
-        return rewards
+        return rewards, rew_info
 
     def bounded_weighted_reward(raw_rewards, min_rewards, max_rewards, weights):
         """

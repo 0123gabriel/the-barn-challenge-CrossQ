@@ -31,7 +31,8 @@ class JackalGazebo(gym.Env):
         goal_reward=1,
         max_collision=10000,
         verbose=True,
-        init_sim=True
+        init_sim=True,
+        laser_reduce_factor=2,
     ):
         """Base RL env that initialize jackal simulation in Gazebo
         """
@@ -47,6 +48,7 @@ class JackalGazebo(gym.Env):
         self.goal_position = goal_position
         
         # env config
+        self.laser_reduce_factor = laser_reduce_factor
         self.time_step = time_step
         self.max_step = max_step
         self.slack_reward = slack_reward
@@ -304,7 +306,7 @@ class JackalGazeboLaser(JackalGazebo):
             np.ndarray: (720,) array of laser scan 
         """
         laser_scan = self.gazebo_sim.get_laser_scan()
-        laser_scan = np.array(laser_scan.ranges)
+        laser_scan = np.array(laser_scan.ranges[::self.laser_reduce_factor])
         laser_scan[laser_scan > self.laser_clip] = self.laser_clip
         return laser_scan
 

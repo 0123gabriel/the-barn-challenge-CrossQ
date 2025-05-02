@@ -20,6 +20,7 @@ env_config:
     goal_position: [0, 10, 0]
     switch_schemes: false
 
+    laser_reduce_factor: 2
     laser_clip: 5
     min_v: -1
     max_v: 2

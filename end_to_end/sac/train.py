@@ -148,7 +148,8 @@ def initialize_policy(config, env, init_buffer=True):
         "batch_norm": training_config   ["encoder_batch_norm"],
     }
 
-    input_dim = 744 # Input dim is [laser dimensio + stack frames*size of local goal + stack frames*action dim] + local_goal * stack frames
+    laser_dim = 720 / config["env_config"]["laser_reduce_factor"]
+    input_dim = laser_dim + config["env_config"]["stack_frame"] * (6) # Input dim is [laser dimensio + stack frames *(vel (2) + local_goal_dim (2) + global_goal_dim (2))]
     actor = Actor(
         state_preprocess=get_encoder(encoder_type, encoder_args),
         head=MLP_CrossQ(
@@ -159,6 +160,7 @@ def initialize_policy(config, env, init_buffer=True):
         ),
         action_dim=action_dim,
         input_dim=input_dim,
+        laser_dim=laser_dim,
         action_space_high=action_space_high, 
         action_space_low=action_space_low,
         use_continual_backprop=training_config["use_continual_backprop"],
@@ -175,6 +177,7 @@ def initialize_policy(config, env, init_buffer=True):
             training_config["encoder_hidden_layer_size"],
             use_continual_backprop=training_config["use_continual_backprop"],
         ),
+        laser_dim=laser_dim,
         use_continual_backprop=training_config["use_continual_backprop"],
     ).to(device)
 
