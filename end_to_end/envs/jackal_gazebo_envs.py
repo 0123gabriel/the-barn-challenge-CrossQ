@@ -292,7 +292,7 @@ class JackalGazeboLaser(JackalGazebo):
         self.laser_clip = laser_clip
         
         #! hardcoded to add 2 to include the local goal position
-        obs_dim = 720 + 2 + 2 + self.action_dim  # 720 dim laser scan + goal position + action taken in this time step 
+        obs_dim = int(720 / self.laser_reduce_factor)  + 2 + 2 + self.action_dim  # 720 dim laser scan + goal position + action taken in this time step 
         self.observation_space = Box(
             low=0,
             high=laser_clip,
