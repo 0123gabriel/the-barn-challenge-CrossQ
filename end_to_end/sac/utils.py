@@ -432,6 +432,7 @@ class Simple_Curriculum:
         env_config["kwargs"]["reward_function"] = reward_types[self.stage] #np.random.choice(reward_types)
         env_config["kwargs"]["init_position"] = params["init_position"]
         env_config["kwargs"]["goal_position"] = params["goal_position"]
+        stage_reward = self.stage_reward_weights[self.stage] if self.stage < len(self.stage_reward_weights) else self.default_reward_weights
 
         info = {
             "world": env_config["kwargs"]["world_name"],
@@ -440,7 +441,7 @@ class Simple_Curriculum:
             "success_rate": self.current_sucess_rate,
         }
 
-        env = gym.make(env_config["env_id"], **env_config["kwargs"])
+        env = gym.make(env_config["env_id"], reward_weights = stage_reward, **env_config["kwargs"])
         env = StackFrame(env, stack_frame=env_config["stack_frame"])
 
         return env, info
