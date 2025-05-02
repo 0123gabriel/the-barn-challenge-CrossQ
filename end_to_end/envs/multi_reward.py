@@ -334,7 +334,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
 
         return rewards, rew_info
 
-    def bounded_weighted_reward(raw_rewards, min_rewards, max_rewards, weights):
+    def bounded_weighted_reward(self, raw_rewards, min_rewards, max_rewards, weights):
         """
         Compute a total reward in [-1, 1] by normalizing, weighting, and combining reward components.
 
