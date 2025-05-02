@@ -451,7 +451,7 @@ class Actor(nn.Module):
         #print('State after preprocessing: ', s.shape) 
         #print('No laser data: ', no_laser_data.shape)
         s = torch.cat([s, no_laser_data], dim=1) # 744
-        print('State previous ', s.shape, '======================================')
+        #print('State previous ', s.shape, '======================================')
         
         #print('S', s.shape)
         mean = self.mean(self.head(s))
