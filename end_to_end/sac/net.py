@@ -333,10 +333,12 @@ class MLP_CrossQ(nn.Module):
         for i in range(num_layers):
             input_dim = hidden_layer_size if i > 0 else self.input_dim
             in_layer = nn.Linear(input_dim, hidden_layer_size)
+            br_layer = BatchRenorm(hidden_layer_size)
+            act = get_activation(activation)()
             
             layers.append(in_layer)
-            layers.append(get_activation(activation)())
-            layers.append(BatchRenorm(hidden_layer_size)) 
+            layers.append(act)
+            layers.append(br_layer) 
             
             out_layer = None
             if i < num_layers - 1:
@@ -346,7 +348,7 @@ class MLP_CrossQ(nn.Module):
                 cbp_layer = CBPLinear(
                     in_layer=in_layer,
                     out_layer=out_layer,
-                    bn_layer = BatchRenorm(input_dim),
+                    bn_layer = br_layer,
                     init='orthogonal',
                 )
                 layers.append(cbp_layer)
