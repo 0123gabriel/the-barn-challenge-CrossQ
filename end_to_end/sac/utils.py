@@ -516,8 +516,8 @@ class CBPLinear(nn.Module):
             out_layer: nn.Linear,
             ln_layer: nn.LayerNorm = None,
             bn_layer: BatchRenorm = None,
-            replacement_rate=1e-4,
-            maturity_threshold=100,
+            replacement_rate=0.1, #1e-4,
+            maturity_threshold=5, #100,
             init='kaiming',
             act_type='relu6',
             util_type='contribution',
@@ -613,6 +613,9 @@ class CBPLinear(nn.Module):
             Reset the corresponding batchnorm/layernorm layers
             """
             if self.bn_layer is not None:
+                #assert self.bn_layer.weight.data.shape[0] >= features_to_replace, f"Error in shape of weights {self.bn_layer.weight.data.shape[0]} and features shape {features_to_replace}" 
+                #print('Features to replace dim', features_to_replace)
+                #print("BatchNorm layer weight shape[0]:", self.bn_layer.weight.data.shape[0])
                 self.bn_layer.bias.data[features_to_replace] = 0.0
                 self.bn_layer.weight.data[features_to_replace] = 1.0
                 self.bn_layer.running_mean.data[features_to_replace] = 0.0
