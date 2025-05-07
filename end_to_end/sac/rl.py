@@ -411,23 +411,25 @@ class Actor(nn.Module):
         log_std = nn.Linear(self.head.feature_dim, action_dim)
         
         if use_continual_backprop:
-            prev_lin, prev_br = self.head.get_last_layers()
+            prev_lin, _ = self.head.get_last_layers()
+            mean_br = BatchRenorm(prev_lin.out_features)
             cbp_mean = CBPLinear(
                         in_layer=prev_lin,
                         out_layer=mean,
-                        bn_layer = prev_br,
+                        bn_layer = mean_br,
                         init='orthogonal',
                     )
             
+            log_std_br = BatchRenorm(prev_lin.out_features)
             cbp_log_std = CBPLinear(
                         in_layer=prev_lin,
                         out_layer=log_std,
-                        bn_layer = prev_br,
+                        bn_layer = log_std_br,
                         init='orthogonal',
                     )
             
-            self.mean = nn.Sequential(cbp_mean, mean)
-            self.log_std = nn.Sequential(cbp_log_std, log_std)
+            self.mean = nn.Sequential(mean_br, cbp_mean, mean)
+            self.log_std = nn.Sequential(log_std_br, cbp_log_std, log_std)
         else:
             self.mean = mean
             self.log_std = log_std

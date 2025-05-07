@@ -338,7 +338,9 @@ class MLP_CrossQ(nn.Module):
             
             layers.append(in_layer)
             layers.append(act)
-            layers.append(br_layer) 
+            
+            if i != num_layers - 1:
+                layers.append(br_layer) 
             
             out_layer = None
             if i < num_layers - 1:
