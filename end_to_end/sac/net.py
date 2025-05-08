@@ -378,15 +378,12 @@ class MLP_CrossQ(nn.Module):
     
     def get_last_layers(self):
         last_linear = None
-        last_batchrenorm = None
         for layer in reversed(self.mlp):
             if last_linear is None and isinstance(layer, nn.Linear):
                 last_linear = layer
-            if last_batchrenorm is None and isinstance(layer, BatchRenorm):
-                last_batchrenorm = layer
-            if last_linear is not None and last_batchrenorm is not None:
+            if last_linear is not None:
                 break
-        return last_linear, last_batchrenorm
+        return last_linear
     
     def forward(self, x):
         return self.mlp(x)
