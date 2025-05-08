@@ -613,17 +613,6 @@ class CBPLinear(nn.Module):
             Reset the corresponding batchnorm/layernorm layers
             """
             if self.bn_layer is not None:
-                assert features_to_replace.max().item() < self.bn_layer.bias.shape[0], (
-                    f"Max index {features_to_replace.max().item()} >= BatchRenorm size {self.bn_layer.bias.shape[0]}"
-                )
-                
-                assert features_to_replace.min().item() >= 0, (
-                    f"Min index {features_to_replace.min().item()} < 0"
-                )
-                
-                print("features_to_replace_input_indices:", features_to_replace)
-                print("bn_layer.bias.shape:", self.bn_layer.bias.shape)
-
                 self.bn_layer.bias.data[features_to_replace] = 0.0
                 self.bn_layer.weight.data[features_to_replace] = 1.0
                 self.bn_layer.running_mean.data[features_to_replace] = 0.0

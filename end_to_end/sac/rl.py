@@ -338,27 +338,29 @@ class CrossQCritic(nn.Module):
         fc2 = nn.Linear(self.state_preprocess2.hidden_size, 1)
         
         if use_continual_backprop:
-            prev_lin, prev_br = head.get_last_layers()
+            prev_lin = head.get_last_layers()
+            br_1 = BatchRenorm(prev_lin.out_features)
             cbp1 = CBPLinear(
                         in_layer=prev_lin,
                         out_layer=fc1,
-                        bn_layer = prev_br,
+                        bn_layer = br_1,
                         init='orthogonal',
                     )
             
+            br_2 = BatchRenorm(prev_lin.out_features)
             cbp2 = CBPLinear(
                         in_layer=prev_lin,
                         out_layer=fc2,
-                        bn_layer = prev_br,
+                        bn_layer = br_2,
                         init='orthogonal',
                     )
             
-            self.fc1 = nn.Sequential(cbp1, fc1)
-            self.fc2 = nn.Sequential(cbp2, fc2)
+            self.fc1 = nn.Sequential(br_1, cbp1, fc1)
+            self.fc2 = nn.Sequential(br_2, cbp2, fc2)
         
         else:
-            self.fc1 = nn.Sequential(fc1)
-            self.fc2 = nn.Sequential(fc2)
+            self.fc1 = nn.Sequential(br_1, fc1)
+            self.fc2 = nn.Sequential(br_2, fc2)
             
 
     def _initialize_weights(self):
