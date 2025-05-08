@@ -333,33 +333,35 @@ class MLP_CrossQ(nn.Module):
         self.feature_dim = hidden_layer_size
         
         layers = []
+        linear_layers = []
+        bn_layers = []
         layers.append(BatchRenorm(self.input_dim)) 
         
         for i in range(num_layers):
             input_dim = hidden_layer_size if i > 0 else self.input_dim
             in_layer = nn.Linear(input_dim, hidden_layer_size)
-            br_layer = BatchRenorm(hidden_layer_size)
-            act = get_activation(activation)()
+            bn_layer = BatchRenorm(hidden_layer_size)
+            linear_layers.append(in_layer)
+            bn_layers.append(bn_layer)
+        
+        for i in range(num_layers - 1):
+            layers.append(linear_layers[i])
+            layers.append(get_activation(activation)())
+            layers.append(bn_layers[i + 1])
             
-            layers.append(in_layer)
-            layers.append(act)
-            
-            if i != num_layers - 1:
-                layers.append(br_layer) 
-            
-            out_layer = None
-            if i < num_layers - 1:
-                out_layer = nn.Linear(hidden_layer_size, hidden_layer_size)
-            
-            if use_continual_backprop and out_layer is not None:
+            next_linear = linear_layers[i + 1]  # This is the actual next layer instance
+
+            if use_continual_backprop:
                 cbp_layer = CBPLinear(
                     in_layer=in_layer,
-                    out_layer=out_layer,
-                    bn_layer = br_layer,
+                    out_layer=next_linear,
+                    bn_layer = bn_layers[i+1],
                     init='orthogonal',
                 )
                 layers.append(cbp_layer)
 
+        layers.append(linear_layers[-1])
+        layers.append(get_activation(activation)())
         #layers.append(BatchRenorm(hidden_layer_size, momentum=0.01))
         self.mlp = nn.Sequential(*layers)
         self._initialize_weights()
@@ -369,7 +371,11 @@ class MLP_CrossQ(nn.Module):
             if isinstance(m, nn.Linear):
                 nn.init.orthogonal_(m.weight)
                 nn.init.zeros_(m.bias)
-                
+    
+    """
+    BatchRenorm + Linear + ReLU + BatchRenorm + Linear + ReLU
+    """
+    
     def get_last_layers(self):
         last_linear = None
         last_batchrenorm = None
