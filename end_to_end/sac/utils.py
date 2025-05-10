@@ -396,16 +396,16 @@ class Simple_Curriculum:
         # [simple, vel, obs, local_goal, local_goal_quadratic, smoothness, stop, straight, speed, terminal]
         # Define reward weights for different stages
         self.stage_reward_weights = {
-            0: np.array([10, 4.67, 0.33, 0.66, 0.66, 1.,0.66, 0.66, 1.33, 0.66]),  # fase 1
-            1: np.array([10, 7, 1, 4, 4, 1.5, 6, 1, 2, 1]),    # fase 2
-            2: np.array([10, 5, 2, 4, 4, 5, 3, 2, 2.5, 2]),    # fase 3
-            3: np.array([10, 6, 3, 4, 4, 5, 1, 2, 2.5, 2]),    # fase 4
-            4: np.array([10, 2, 3, 4, 4, 8, 1, 2, 7, 5]),      # fase 5 
-            5: np.array([10, 1, 3, 4, 4, 10, 1, 2, 9, 5])      # fase 6
+            0: np.array([10.0, 5.0, 0.33, 0.5, 0.5, 1.0, 0.5, 0.5, 1.0, 0.5]),  # fase 1
+            1: np.array([10.0, 4.0, 1.0, 4.0, 2.0, 1.5, 2.0, 1.0, 2.0, 1.0]),    # fase 2
+            2: np.array([10.0, 4.0, 2.0, 3.5, 4.5, 5.0, 3.0, 2.0, 3.0, 2.0]),    # fase 3
+            3: np.array([10.0, 3.0, 4.0, 3.0, 4.5, 5.0, 1.0, 2.0, 4.0, 2.0]),    # fase 4
+            4: np.array([10.0, 2.0, 3.0, 3.0, 4.0, 4.0, 4.0, 2.0, 5.0, 5.0]),      # fase 5 
+            5: np.array([10.0, 1.0, 3.0, 4.0, 4.0, 9.0, 0.5, 2.0, 7.0, 6.0])      # fase 6
         }
 
         # Default reward weights for stages beyond those defined
-        self.default_reward_weights = np.array([10, 1, 3, 4, 4, 10, 1, 2, 9, 5])
+        self.default_reward_weights = np.array([10.0, 1.0, 3.0, 4.0, 4.0, 9.0, 0.5, 2.0, 7.0, 6.0])
         
         # TODO: change the reward weights for the different stages
         
