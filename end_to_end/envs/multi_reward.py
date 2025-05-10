@@ -305,12 +305,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             self.failure_reward,
             self.success_reward,
         ]
-
-        self.reward_weights = np.array([10, 7, 1, 4, 4, 1.5, 6, 1, 2, 1])  # fase 2
-        self.reward_weights = np.array([10, 5, 2, 4, 4, 5, 3, 2, 2.5, 2])  # fase 3
-        self.reward_weights = np.array([10, 6, 3, 4, 4, 5, 1, 2, 2.5, 2])  # fase 4
-        self.reward_weights = np.array([10, 2, 3, 4, 4, 8, 1, 2, 7, 5])  # fase 5
-        self.reward_weights = np.array([10, 1, 3, 4, 4, 10, 1, 2, 9, 5])  # fase 6
+        
+        # self.reward_weights = np.array([10, 7, 1, 4, 4, 1.5, 6, 1, 2, 1])  # fase 2
+        # self.reward_weights = np.array([10, 5, 2, 4, 4, 5, 3, 2, 2.5, 2])  # fase 3
+        # self.reward_weights = np.array([10, 6, 3, 4, 4, 5, 1, 2, 2.5, 2])  # fase 4
+        # self.reward_weights = np.array([10, 2, 3, 4, 4, 8, 1, 2, 7, 5])  # fase 5
+        # self.reward_weights = np.array([10, 1, 3, 4, 4, 10, 1, 2, 9, 5])  # fase 6
 
         rewards = self.bounded_weighted_reward(
             reward_array[:, 0],

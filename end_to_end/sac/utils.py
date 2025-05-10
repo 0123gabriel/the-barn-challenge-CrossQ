@@ -391,12 +391,12 @@ class Simple_Curriculum:
         # Final stage parameters for all stages >= 6
         final_stage_params = {"fill_pct_range": [0.1, 0.35], "distance_range": [25, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]}
 
-        reward_types = ["simple", "simple_local", "lidar", "local", "smooth", "mixed", "mixed"]
+        # reward_types = ["simple", "simple_local", "lidar", "local", "smooth", "mixed", "mixed"]
         
-        
+        # [simple, vel, obs, local_goal, local_goal_quadratic, smoothness, stop, straight, speed, terminal]
         # Define reward weights for different stages
         self.stage_reward_weights = {
-            0: np.array([10, 7, 0.5, 1, 1, 1.5, 1, 1, 2, 1]),  # fase 1
+            0: np.array([10, 4.67, 0.33, 0.66, 0.66, 1.,0.66, 0.66, 1.33, 0.66]),  # fase 1
             1: np.array([10, 7, 1, 4, 4, 1.5, 6, 1, 2, 1]),    # fase 2
             2: np.array([10, 5, 2, 4, 4, 5, 3, 2, 2.5, 2]),    # fase 3
             3: np.array([10, 6, 3, 4, 4, 5, 1, 2, 2.5, 2]),    # fase 4
