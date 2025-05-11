@@ -396,9 +396,9 @@ class Simple_Curriculum:
         # [simple, vel, obs, local_goal, local_goal_quadratic, smoothness, stop, straight, speed, terminal]
         # Define reward weights for different stages
         self.stage_reward_weights = {
-            0: np.array([10.0, 5.0, 0.33, 0.5, 0.5, 1.0, 0.5, 0.5, 1.0, 0.5]),  # fase 1
-            1: np.array([10.0, 4.0, 1.0, 4.0, 2.0, 1.5, 2.0, 1.0, 2.0, 1.0]),    # fase 2
-            2: np.array([10.0, 4.0, 2.0, 3.5, 4.5, 5.0, 3.0, 2.0, 3.0, 2.0]),    # fase 3
+            0: np.array([10.0, 2.5, 0.15, 0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 0.25]),  # fase 1
+            1: np.array([10.0, 4.0, 1.0, 4.0, 2.0, 1.5, 2.0, 1.0, 2.0, 1.0]),        # fase 2
+            2: np.array([10.0, 4.0, 2.0, 3.5, 4.5, 5.0, 3.0, 2.0, 3.0, 2.0]),        # fase 3
             3: np.array([10.0, 3.0, 4.0, 3.0, 4.5, 5.0, 1.0, 2.0, 4.0, 2.0]),    # fase 4
             4: np.array([10.0, 2.0, 3.0, 3.0, 4.0, 4.0, 4.0, 2.0, 5.0, 5.0]),      # fase 5 
             5: np.array([10.0, 1.0, 3.0, 4.0, 4.0, 9.0, 0.5, 2.0, 7.0, 6.0])      # fase 6
@@ -516,8 +516,8 @@ class CBPLinear(nn.Module):
             out_layer: nn.Linear,
             ln_layer: nn.LayerNorm = None,
             bn_layer: BatchRenorm = None,
-            replacement_rate=1e-4,
-            maturity_threshold=100,
+            replacement_rate=1e-5,
+            maturity_threshold=1000,
             init='kaiming',
             act_type='relu6',
             util_type='contribution',
@@ -835,7 +835,7 @@ class CBPConv1d(nn.Module):
             bn_layer: BatchRenorm = None,
             num_last_filter_outputs=1,
             replacement_rate=1e-5,
-            maturity_threshold=1000,
+            maturity_threshold=5000,
             init='kaiming',
             act_type='relu6',
             util_type='contribution',

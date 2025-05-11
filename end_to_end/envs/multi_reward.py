@@ -274,10 +274,10 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         reward_array[0] = [self._simple_progress_reward(global_goal_pos), -0.2, 1.5]
         reward_array[1] = [
             self._vel_toward_goal_reward(global_goal_pos, vel, psi),
-            -4,
-            2,
+            -6,
+            4,
         ]
-        reward_array[2] = [self._obs_dist_reward(), -0.4, 0.16]
+        reward_array[2] = [self._obs_dist_reward(), -0.8, 0.16]
         reward_array[3] = [
             self._local_goal_approach_linear(local_goal_g, prev_pos, pos),
             -0.45,
@@ -285,19 +285,19 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         ]
         reward_array[4] = [
             self._local_goal_approach_quadratic(local_goal_g, prev_pos, pos),
-            -0.5,
-            0.5,
+            -0.45,
+            0.45,
         ]
         reward_array[5] = [
             self._smoothness_reward(prev_pos, prev_psi, pos, psi),
-            -0.5,
+            -0.45,
             0.05,
         ]
         reward_array[6] = [self._stop_reward(prev_pos, pos), -0.5, 0]
         reward_array[7] = [self._going_straight_reward(prev_psi, psi), 0.025, 0.1]
         reward_array[8] = [
             self._speed_reward_soft(prev_vel, vel, self.max_vel),
-            -0.2,
+            -1.2,
             0.2,
         ]
         reward_array[9] = [
