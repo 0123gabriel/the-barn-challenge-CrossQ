@@ -264,7 +264,7 @@ class TCNEncoder(Encoder):
             layers.append(conv_layers[i])
             layers.append(nn.ReLU())
 
-            if bn_layers[i]:
+            if bn_layers[i] and batch_norm:
                 layers.append(bn_layers[i])
 
             next_conv = conv_layers[i + 1]  # This is the actual next layer instance
