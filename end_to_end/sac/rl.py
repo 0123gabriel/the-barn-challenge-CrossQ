@@ -336,10 +336,11 @@ class CrossQCritic(nn.Module):
         self.state_preprocess2 = state_preprocess
         self.head2 = head
         fc2 = nn.Linear(self.state_preprocess2.hidden_size, 1)
+        prev_lin = head.get_last_layers()
+        br_1 = BatchRenorm(prev_lin.out_features)
+        br_2 = BatchRenorm(prev_lin.out_features)
         
         if use_continual_backprop:
-            prev_lin = head.get_last_layers()
-            br_1 = BatchRenorm(prev_lin.out_features)
             cbp1 = CBPLinear(
                         in_layer=prev_lin,
                         out_layer=fc1,
@@ -347,7 +348,6 @@ class CrossQCritic(nn.Module):
                         init='orthogonal',
                     )
             
-            br_2 = BatchRenorm(prev_lin.out_features)
             cbp2 = CBPLinear(
                         in_layer=prev_lin,
                         out_layer=fc2,
