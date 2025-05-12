@@ -312,7 +312,7 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         # self.reward_weights = np.array([10, 2, 3, 4, 4, 8, 1, 2, 7, 5])  # fase 5
         # self.reward_weights = np.array([10, 1, 3, 4, 4, 10, 1, 2, 9, 5])  # fase 6
 
-        rewards = self.bounded_weighted_reward(
+        rewards, norm_rewards = self.bounded_weighted_reward(
             reward_array[:, 0],
             reward_array[:, 1],
             reward_array[:, 2],
@@ -331,6 +331,22 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
             "reward/terminal_reward": reward_array[9, 0],
             "reward/combined_reward_total": rewards,
         }
+        
+        norm_rewards_info = {
+            "norm_rewards/simple_reward/progress": norm_rewards[0],
+            "norm_rewards/vel_toward_goal": norm_rewards[1],
+            "norm_rewards/obstacle_distance_reward": norm_rewards[2],
+            "norm_rewards/local_goal_approach_linear": norm_rewards[3],
+            "norm_rewards/local_goal_approach_quadratic": norm_rewards[4],
+            "norm_rewards/smoothness_reward": norm_rewards[5],
+            "norm_rewards/stop_reward": norm_rewards[6],
+            "norm_rewards/going_straight_reward": norm_rewards[7],
+            "norm_rewards/soft_speed_reward": norm_rewards[8],
+            "norm_rewards/terminal_reward": norm_rewards[9],
+            "norm_rewards/combined_reward_total": rewards,
+        }
+        
+        rew_info.update(norm_rewards_info)
 
         return rewards, rew_info
 
@@ -363,8 +379,9 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         if total_weight == 0:
             return 0.0  # Avoid division by zero
 
+        norm_rewards =  weights * normalized / total_weight
         total_reward = np.sum(weights * normalized) / total_weight
-        return float(np.clip(total_reward, -1.0, 1.0))
+        return float(np.clip(total_reward, -1.0, 1.0)), norm_rewards
 
     def local_focused_scheme(
         self,
