@@ -137,7 +137,7 @@ class CrossQ_SAC(object):
             + self.gamma * (1 - termination) * target_q_values
         ).detach()
 
-        q1_loss = F.mse_loss(q_values_1, q_target)
+        q1_loss = F.mse_loss(q_values_1, q_target) 
         q2_loss = F.mse_loss(q_values_2, q_target)
         total_q_loss = q1_loss + q2_loss
 

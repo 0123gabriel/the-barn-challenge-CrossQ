@@ -391,7 +391,7 @@ class Simple_Curriculum:
         # Final stage parameters for all stages >= 6
         final_stage_params = {"fill_pct_range": [0.1, 0.35], "distance_range": [25, 40], "init_position": [-2, 3, 1.57], "goal_position": [0, 10, 0]}
 
-        # reward_types = ["simple", "simple_local", "lidar", "local", "smooth", "mixed", "mixed"]
+        reward_types = ["simple", "simple_local", "lidar", "local", "smooth", "mixed", "mixed"]
         
         # [simple, vel, obs, local_goal, local_goal_quadratic, smoothness, stop, straight, speed, terminal]
         # Define reward weights for different stages
@@ -428,8 +428,8 @@ class Simple_Curriculum:
         #init_pos_offset = round(random.uniform(-1.5, 1.25), 2) # Random x offset
         
         env_config["kwargs"]["world_name"] = world_name
-        # reward_types = ["smooth", "lidar", "simple", "mixed", "local", "simple_local"]
-        env_config["kwargs"]["reward_function"] = "combined" # reward_types[self.stage] #np.random.choice(reward_types)
+        reward_types = ["smooth", "lidar", "simple", "mixed", "local", "simple_local"] 
+        env_config["kwargs"]["reward_function"] =reward_types[self.stage] #np.random.choice(reward_types) # "combined"
         env_config["kwargs"]["init_position"] = params["init_position"]
         env_config["kwargs"]["goal_position"] = params["goal_position"]
         stage_reward = self.stage_reward_weights[self.stage] if self.stage < len(self.stage_reward_weights) else self.default_reward_weights

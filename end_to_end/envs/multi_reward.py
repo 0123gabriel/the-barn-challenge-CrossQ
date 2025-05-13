@@ -735,12 +735,12 @@ class MultiRewardEnv(MotionControlContinuous, JackalGazeboLaser):
         """
         range: (-0.2 - 1.5)
         """
-        # r_simple = (
-        #     c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
-        #     + c_2
-        # )
+        r_simple = (
+            c_1 * (np.linalg.norm(self.last_goal_pos) - np.linalg.norm(global_goal_pos))
+            + c_2
+        )
 
-        r_simple = 1.0 / (np.linalg.norm(global_goal_pos) + 0.3) - 0.25
+        #r_simple = 1.0 / (np.linalg.norm(global_goal_pos) + 0.3) - 0.25
 
         return r_simple
 
