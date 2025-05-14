@@ -26,7 +26,8 @@ from sac.collector import LocalCollector
 
 from rl import Actor, CrossQCritic, CrossQ_SAC
 from net import MLP_CrossQ
-from utils import Env_Selector, Simple_Curriculum, ReplayBuffer
+from utils import ReplayBuffer
+from curriculum import Env_Selector, Simple_Curriculum
 from net import MLP_CrossQ, RNNEncoder, CNNEncoder, TCNEncoder, DilatedCNNEncoder
 from torch.utils.tensorboard import SummaryWriter
 
@@ -246,6 +247,7 @@ def train(env_selector, env, policy, buffer, config):
         #     - (training_config["exploration_noise_start"] - training_config["exploration_noise_end"]) \
         #     *  n_steps / training_args["max_step"] + training_config["exploration_noise_start"]
         steps, epinfo = collector.collect(n_steps=training_args["collect_per_step"])
+        env.close()
 
         n_steps += steps
         n_iter += 1
@@ -304,9 +306,6 @@ def train(env_selector, env, policy, buffer, config):
                 writer.add_scalar(k + "/Success", np.mean([epinfo["success"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
                 writer.add_scalar(k + "/Time", np.mean([epinfo["ep_time"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
                 writer.add_scalar(k + "/Collision", np.mean([epinfo["collision"] for epinfo in world_ep_buf[k]]), global_step=n_steps)
-
-        env.close()
-        time.sleep(1)
     
         # Change env for next iteration
         env, info = env_selector.get_env(success=log["Success"])
@@ -376,6 +375,7 @@ if __name__ == "__main__":
                     "collect_per_step": config["training_config"]["training_args"]["collect_per_step"],
                     "update_per_step": config["training_config"]["training_args"]["update_per_step"],
                     "batch_size": config["training_config"]["training_args"]["batch_size"],
+                    "env_selector": config["env_selector"],
                 },
             )
 

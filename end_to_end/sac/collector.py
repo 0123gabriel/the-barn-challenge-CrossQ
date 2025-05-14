@@ -13,10 +13,12 @@ import wandb
 BUFFER_PATH = os.getenv('BUFFER_PATH')
 
 class LocalCollector(object):
+    #TODO: modify to take in the env_selector, update env_selection data, and select_the_env according to the selector
     def __init__(self, policy, env, replaybuffer, use_wandb=False):
         self.policy = policy
         self.env = env
         self.buffer = replaybuffer
+        # TODO: add if to use env_selector
         
         self.last_obs = None
         
@@ -39,6 +41,7 @@ class LocalCollector(object):
             #print('Last obs')
         else:
             #print('Before reset')
+            # TODO: before reset, sample environment from the env_selector (close the env and select a new one)
             obs = env.reset()
             #print('Env reset called')
             
@@ -85,7 +88,7 @@ class LocalCollector(object):
                 ep_rew = 0
                 ep_len = 0
                 self.global_episodes += 1
-                
+                #TODO call the env_selector to update the env_selection data
                 if self.use_wandb:
                     wandb.log(joined_info)
                 
