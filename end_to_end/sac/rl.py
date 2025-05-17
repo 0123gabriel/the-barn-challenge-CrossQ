@@ -361,10 +361,11 @@ class CrossQCritic(nn.Module):
         else:
             self.fc1 = nn.Sequential(br_1, fc1)
             self.fc2 = nn.Sequential(br_2, fc2)
-            
+        
+        self._initialize_weights()
 
     def _initialize_weights(self):
-        for layer in list(self.q1) + list(self.q2):
+        for layer in list(self.fc1) + list(self.fc2):
             if isinstance(layer, nn.Linear):
                 nn.init.orthogonal_(layer.weight)
                 nn.init.zeros_(layer.bias)
@@ -412,9 +413,11 @@ class Actor(nn.Module):
         mean = nn.Linear(self.head.feature_dim, action_dim)
         log_std = nn.Linear(self.head.feature_dim, action_dim)
         
+        prev_lin = self.head.get_last_layers()
+        mean_br = BatchRenorm(prev_lin.out_features)
+        log_std_br = BatchRenorm(prev_lin.out_features)
+        
         if use_continual_backprop:
-            prev_lin = self.head.get_last_layers()
-            mean_br = BatchRenorm(prev_lin.out_features)
             cbp_mean = CBPLinear(
                         in_layer=prev_lin,
                         out_layer=mean,
@@ -422,7 +425,6 @@ class Actor(nn.Module):
                         init='orthogonal',
                     )
             
-            log_std_br = BatchRenorm(prev_lin.out_features)
             cbp_log_std = CBPLinear(
                         in_layer=prev_lin,
                         out_layer=log_std,
@@ -433,8 +435,10 @@ class Actor(nn.Module):
             self.mean = nn.Sequential(mean_br, cbp_mean, mean)
             self.log_std = nn.Sequential(log_std_br, cbp_log_std, log_std)
         else:
-            self.mean = mean
-            self.log_std = log_std
+            self.mean = nn.Sequential(mean_br, mean)
+            self.log_std = nn.Sequential(log_std_br, log_std)
+
+        self._initialize_weights()
 
         self.log_std_min, self.log_std_max = log_std_bounds
         
@@ -443,6 +447,12 @@ class Actor(nn.Module):
         print("========================================================================")
         print('Action scale: ', self.action_scale, 'Action bias: ', self.action_bias)
         print("========================================================================")
+
+    def _initialize_weights(self):
+        for layer in list(self.mean) + list(self.log_std):
+            if isinstance(layer, nn.Linear):
+                nn.init.orthogonal_(layer.weight)
+                nn.init.zeros_(layer.bias)
 
     def forward(self, state):
         # input dim: 744 but state is 726 and no laser data is 24 = 6*4
