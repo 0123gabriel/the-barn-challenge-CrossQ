@@ -155,7 +155,7 @@ class Simple_Curriculum:
         #init_pos_offset = round(random.uniform(-1.5, 1.25), 2) # Random x offset
         
         env_config["kwargs"]["world_name"] = world_name
-        env_config["kwargs"]["reward_function"] =reward_types[self.stage] #np.random.choice(reward_types) # "combined"
+        env_config["kwargs"]["reward_function"] = "combined" #reward_types[self.stage] #np.random.choice(reward_types) # 
         env_config["kwargs"]["init_position"] = params["init_position"]
         env_config["kwargs"]["goal_position"] = params["goal_position"]
         stage_reward = self.stage_reward_weights[self.stage] if self.stage < len(self.stage_reward_weights) else self.default_reward_weights
