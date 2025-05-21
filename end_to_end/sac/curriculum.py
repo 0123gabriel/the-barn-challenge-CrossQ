@@ -123,7 +123,7 @@ class Simple_Curriculum:
         # [simple, vel, obs, local_goal, local_goal_quadratic, smoothness, stop, straight, speed, terminal]
         # Define reward weights for different stages
         self.stage_reward_weights = {
-            0: np.array([10.0, 2.5, 0.15, 0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 0.25]),  # fase 1
+            0: np.array([10.0, 2.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),  # fase 1 # before: np.array([10.0, 2.5, 0.15, 0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 0.25])
             1: np.array([10.0, 4.0, 1.0, 4.0, 2.0, 1.5, 2.0, 1.0, 2.0, 1.0]),        # fase 2
             2: np.array([10.0, 4.0, 2.0, 3.5, 4.5, 5.0, 3.0, 2.0, 3.0, 2.0]),        # fase 3
             3: np.array([10.0, 3.0, 4.0, 3.0, 4.5, 5.0, 1.0, 2.0, 4.0, 2.0]),    # fase 4
