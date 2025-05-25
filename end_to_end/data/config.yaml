@@ -72,7 +72,7 @@ training_config:
     update_actor_freq: 2
     #noise_clip: 0.5
     n_step: 3
-    entropy_penalty: False
+    entropy_penalty: True
     omega: 0.25
 
   training_args:
