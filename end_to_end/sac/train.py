@@ -346,7 +346,7 @@ if __name__ == "__main__":
     config = initialize_config(CONFIG_PATH, SAVE_PATH)
     
     use_wandb = not args.testing
-    config["env_config"]["use_wandb"] = use_wandb
+    config["env_config"]["kwargs"]["use_wandb"] = use_wandb
 
     if use_wandb:  # TODO: this should be in the main file
             wandb.init(
