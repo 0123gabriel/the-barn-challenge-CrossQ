@@ -334,12 +334,15 @@ if __name__ == "__main__":
     torch.set_num_threads(8)
     parser = argparse.ArgumentParser(description = 'Start condor training')
     parser.add_argument('--config_path', dest='config_path', default="../data/config.yaml")
+    parser.add_argument('--testing', dest='testing', action='store_true', default=True, help='Use wandb for logging')
     logging.getLogger().setLevel("INFO")
     args = parser.parse_args()
     CONFIG_PATH = args.config_path
     SAVE_PATH = "logging/"
     print(">>>>>>>> Loading the configuration from %s" % CONFIG_PATH)
     config = initialize_config(CONFIG_PATH, SAVE_PATH)
+    
+    use_wandb = not args.testing
 
     if use_wandb:  # TODO: this should be in the main file
             wandb.init(
