@@ -293,7 +293,7 @@ def train(env_selector, env, policy, buffer, config):
         log.update(loss_info)
         print(pformat(log))
 
-        if n_iter % training_config["log_intervals"] == 0:
+        if n_iter % training_config["log_intervals"] == 0 and use_wandb:
             for k in log.keys():
                 writer.add_scalar("train/" + k, log[k], global_step=n_steps)
             #policy.save(save_path, "last_policy")
