@@ -48,7 +48,7 @@ training_config:
   encoder_batch_norm: False
   exploration_noise_start: 0.1
   exploration_noise_end: 0.0999
-  pre_collect: 1000 #1000
+  pre_collect: 100 #1000
   log_intervals: 60
   validation: False
   val_interval: 1000000
@@ -72,11 +72,13 @@ training_config:
     update_actor_freq: 2
     #noise_clip: 0.5
     n_step: 3
+    entropy_penalty: False
+    omega: 0.25
 
   training_args:
     max_step: 4000000
-    collect_per_step: 1000 #1000
-    update_per_step: 250 #250
+    collect_per_step: 100 #1000
+    update_per_step: 20 #250
     batch_size: 64
 
 condor_config:

@@ -30,6 +30,8 @@ class CrossQ_SAC(object):
         alpha_lr=5e-4,  # policy_arg
         n_step=4,  # policy_arg
         update_actor_freq=2,  # policy_arg
+        entropy_penalty=False,  # policy_arg
+        omega=0.2,  # policy_arg
     ):
         self.actor = actor
         self.actor_optim = actor_optim
@@ -71,6 +73,10 @@ class CrossQ_SAC(object):
         self._action_bias = torch.FloatTensor(
             (action_range[1] + action_range[0]) / 2.0
         ).to(device)
+        
+        self.entropy_penalty = entropy_penalty
+        if self.entropy_penalty:
+            self.omega = omega
 
     def select_action(self, states: torch.Tensor, train: bool) -> torch.Tensor:
         """
@@ -168,7 +174,13 @@ class CrossQ_SAC(object):
             self.critic.train()
 
             min_q = torch.minimum(q1, q2)
-            policy_loss = (self.log_alpha.exp() * log_probs - min_q).mean()
+            
+            penalty = 0.0
+            if self.entropy_penalty and hasattr(self, 'old_entropy'):
+                entropy = -log_probs
+                penalty = 0.5*self.omega* torch.pow(entropy-self.old_entropy, 2).mean()
+
+            policy_loss = (self.log_alpha.exp() * log_probs - min_q).mean() + penalty
 
             self.actor_optim.zero_grad()
             policy_loss.backward()
@@ -184,6 +196,7 @@ class CrossQ_SAC(object):
             self.alpha_optimizer.zero_grad()
             entropy_loss.backward()
             self.alpha_optimizer.step()
+            self.old_entropy = entropy
 
         return {
             "Actor_grad_norm": self.grad_norm(self.actor),
