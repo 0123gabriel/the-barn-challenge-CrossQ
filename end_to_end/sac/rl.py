@@ -195,7 +195,7 @@ class CrossQ_SAC(object):
             self.alpha_optimizer.zero_grad()
             entropy_loss.backward()
             self.alpha_optimizer.step()
-            self.old_entropy = -log_probs
+            self.old_entropy = -log_probs.detach()
 
         return {
             "Actor_grad_norm": self.grad_norm(self.actor),
