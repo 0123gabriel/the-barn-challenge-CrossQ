@@ -177,8 +177,7 @@ class CrossQ_SAC(object):
             
             penalty = 0.0
             if self.entropy_penalty and hasattr(self, 'old_entropy'):
-                entropy = -log_probs
-                penalty = 0.5*self.omega* torch.pow(entropy-self.old_entropy, 2).mean()
+                penalty = 0.5*self.omega* torch.pow((-log_probs)-self.old_entropy, 2).mean()
 
             policy_loss = (self.log_alpha.exp() * log_probs - min_q).mean() + penalty
 
@@ -196,7 +195,7 @@ class CrossQ_SAC(object):
             self.alpha_optimizer.zero_grad()
             entropy_loss.backward()
             self.alpha_optimizer.step()
-            self.old_entropy = entropy
+            self.old_entropy = -log_probs
 
         return {
             "Actor_grad_norm": self.grad_norm(self.actor),
