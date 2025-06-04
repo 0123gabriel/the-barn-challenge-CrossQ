@@ -35,12 +35,12 @@ training_config:
   algorithm: "CrossQ"
   network: "mlp"
   encoder: "tcn"  # span "mlp", "cnn", "rnn", "transformer"
-  buffer_size: 200000
+  buffer_size: 1000000
   actor_lr: 0.0001
   actor_weight_decay: 0.000001
   critic_lr: 0.0001
   critic_weight_decay: 0.000005
-  alpha_lr: 0.0002
+  alpha_lr: 0.00001
   num_layers: 1
   hidden_layer_size: 512
   use_continual_backprop: False
@@ -74,7 +74,7 @@ training_config:
     update_actor_freq: 2
     #noise_clip: 0.5
     n_step: 3
-    entropy_penalty: True
+    entropy_penalty: False
     omega: 0.25
 
   training_args:

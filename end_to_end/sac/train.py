@@ -207,6 +207,7 @@ def initialize_policy(config, env, init_buffer=True):
             state_dim=state_dim,
             action_dim=action_dim,
             reward_norm=config["env_config"]["reward_norm"],
+            max_size=config["training_config"]["buffer_size"],
             #**training_config["buffer_args"],
         )
     else:
