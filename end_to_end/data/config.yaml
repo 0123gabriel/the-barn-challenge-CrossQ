@@ -79,8 +79,8 @@ training_config:
 
   training_args:
     max_step: 4000000
-    collect_per_step: 100 #1000
-    update_per_step: 20 #250
+    collect_per_step: 1000
+    update_per_step: 250
     batch_size: 64
 
 condor_config:
